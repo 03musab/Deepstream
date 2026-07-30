@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PROJECT NEPTUNE // Ocean Intelligence Terminal</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Outfit:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="logo-area">
+                <div class="logo-icon"></div>
+                <div class="logo-text">
+                    <span class="logo-title">NEPTUNE</span>
+                    <span class="logo-subtitle">OCEAN INTELLIGENCE</span>
+                </div>
+            </div>
+            
+            <nav class="nav-menu">
+                <a href="#" class="nav-item active" data-tab="terminal">
+                    <i data-lucide="terminal"></i>
+                    <span>Live Terminal</span>
+                </a>
+                <a href="#" class="nav-item" data-tab="zones">
+                    <i data-lucide="map"></i>
+                    <span>Fleet & Zones</span>
+                </a>
+                <a href="#" class="nav-item" data-tab="sales">
+                    <i data-lucide="presentation"></i>
+                    <span>Sales Pitch</span>
+                </a>
+                <a href="#" class="nav-item" data-tab="modeler">
+                    <i data-lucide="calculator"></i>
+                    <span>ARR Modeler</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="system-status">
+                    <span class="status-indicator online"></span>
+                    <span class="status-label">UPLINK ACTIVE</span>
+                </div>
+                <div class="latency-label">SINGAPORE NODE // 42ms</div>
+            </div>
+        </aside>
+
+        <!-- Main Workspace -->
+        <main class="main-content">
+            <!-- Header Bar -->
+            <header class="top-header">
+                <div class="header-title-group">
+                    <span class="confidential-badge">CONFIDENTIAL</span>
+                    <h1 class="header-title" id="page-title">Operations Console</h1>
+                </div>
+                <div class="header-controls">
+                    <button id="play-demo-btn" class="control-widget text-glow" style="cursor: pointer; background: rgba(0, 242, 254, 0.1); border-color: var(--color-cyan); font-weight: 600; display: flex; align-items: center; gap: 8px; outline: none; transition: var(--transition-smooth);">
+                        <i data-lucide="play" style="width: 14px; height: 14px; color: var(--color-cyan);"></i>
+                        <span style="color: var(--color-cyan);">Play Animated Demo</span>
+                    </button>
+                    <div class="control-widget">
+                        <i data-lucide="clock"></i>
+                        <span id="live-clock">12:00:00 UTC</span>
+                    </div>
+                    <div class="control-widget">
+                        <i data-lucide="database"></i>
+                        <span>Copernicus CMEMS // NASA MODIS</span>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Dashboard Content Panels -->
+            <div class="workspace-grid" id="terminal-tab">
+                <!-- Left Panel: Interactive Telemetry Map -->
+                <section class="panel map-panel">
+                    <div class="panel-header">
+                        <div class="panel-title-group">
+                            <i data-lucide="globe"></i>
+                            <h2 class="panel-title">Active Deployment Zones</h2>
+                        </div>
+                        <span class="panel-action-label">Click a zone to target</span>
+                    </div>
+                    <div class="map-container">
+                        <!-- SVG World Map Graphic with overlay coordinates -->
+                        <div class="svg-map-wrapper">
+                            <svg viewBox="0 0 1000 500" class="world-svg" id="world-map">
+                                <!-- Stylized simple continent paths -->
+                                <path d="M150,150 L220,120 L270,180 L290,220 L310,320 L280,380 L200,420 L160,350 L180,260 Z" class="continent" />
+                                <path d="M420,100 L500,80 L580,110 L680,80 L750,150 L650,220 L580,200 L450,230 L380,180 Z" class="continent" />
+                                <path d="M450,250 L520,320 L550,420 L510,480 L440,430 L400,320 Z" class="continent" />
+                                <path d="M720,250 L800,200 L880,280 L820,380 L750,320 Z" class="continent" />
+                                <path d="M850,380 L920,350 L950,400 L880,420 Z" class="continent" />
+                                
+                                <!-- Zone Markers -->
+                                <g class="zone-marker" id="zone-alpha" data-zone="Alpha">
+                                    <circle cx="280" cy="220" r="25" class="zone-glow" />
+                                    <circle cx="280" cy="220" r="6" class="zone-dot" />
+                                    <text x="295" y="225" class="zone-label">ALPHA (ENSO)</text>
+                                </g>
+                                <g class="zone-marker" id="zone-beta" data-zone="Beta">
+                                    <circle cx="220" cy="180" r="25" class="zone-glow" />
+                                    <circle cx="220" cy="180" r="6" class="zone-dot" />
+                                    <text x="235" y="185" class="zone-label">BETA (GoM)</text>
+                                </g>
+                                <g class="zone-marker" id="zone-gamma" data-zone="Gamma">
+                                    <circle cx="450" cy="120" r="25" class="zone-glow" />
+                                    <circle cx="450" cy="120" r="6" class="zone-dot" />
+                                    <text x="465" y="125" class="zone-label">GAMMA (Atlantic)</text>
+                                </g>
+                                <g class="zone-marker" id="zone-delta" data-zone="Delta">
+                                    <circle cx="680" cy="260" r="25" class="zone-glow" />
+                                    <circle cx="680" cy="260" r="6" class="zone-dot" />
+                                    <text x="695" y="265" class="zone-label">DELTA (Indian)</text>
+                                </g>
+                                <g class="zone-marker" id="zone-epsilon" data-zone="Epsilon">
+                                    <circle cx="520" cy="50" r="25" class="zone-glow" />
+                                    <circle cx="520" cy="50" r="6" class="zone-dot" />
+                                    <text x="535" y="55" class="zone-label">EPSILON (Arctic)</text>
+                                </g>
+                            </svg>
+                        </div>
+                    </div>
+                    
+                    <!-- Fleet Stats Summary -->
+                    <div class="fleet-stats-grid">
+                        <div class="stat-card">
+                            <span class="stat-name">Active Fleet</span>
+                            <span class="stat-value">20 AUVs</span>
+                        </div>
+                        <div class="stat-card">
+                            <span class="stat-name">Daily Telemetry</span>
+                            <span class="stat-value">9.6 MB</span>
+                        </div>
+                        <div class="stat-card">
+                            <span class="stat-name">Avg Battery</span>
+                            <span class="stat-value text-success">94.2%</span>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Center Panel: AI Forecast Overlay -->
+                <section class="panel forecast-panel">
+                    <div class="panel-header">
+                        <div class="panel-title-group">
+                            <i data-lucide="trending-up"></i>
+                            <h2 class="panel-title">Neptune-GPT Prediction Engine</h2>
+                        </div>
+                        <div class="select-wrapper">
+                            <select id="commodity-select">
+                                <option value="copper">Pacific SST vs. Copper Futures (Test 1)</option>
+                                <option value="tuna">Atlantic Chlorophyll vs. Tuna Prices (Test 2)</option>
+                                <option value="oil">Gulf of Mexico Plume vs. Crude Oil (Test 3)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="chart-wrapper">
+                        <canvas id="forecastChart"></canvas>
+                    </div>
+                    <div class="lag-slider-container" style="padding: 12px 20px; display: flex; flex-direction: column; gap: 8px; border-top: 1px solid rgba(255, 255, 255, 0.05); background: rgba(5, 8, 17, 0.2);">
+                        <div style="display: flex; justify-content: space-between; font-size: 11px; font-weight: 600; color: var(--text-secondary); letter-spacing: 0.5px;">
+                            <span>ADJUST FORECAST LEAD TIME</span>
+                            <span id="lag-slider-val" class="text-glow" style="font-family: var(--font-mono);">56 Days</span>
+                        </div>
+                        <input type="range" id="lag-slider-input" class="slider-input" min="0" max="90" value="56" style="width: 100%;">
+                    </div>
+                    <div class="prediction-meta">
+                        <div class="meta-item">
+                            <span class="meta-label">PEARSON CORRELATION (r)</span>
+                            <span class="meta-value text-glow" id="corr-val">0.9135</span>
+                        </div>
+                        <div class="meta-item">
+                            <span class="meta-label">PREDICTIVE LEAD TIME</span>
+                            <span class="meta-value" id="lead-val">8 Weeks (56 Days)</span>
+                        </div>
+                        <div class="meta-item">
+                            <span class="meta-label">NEPTUNE CONFIDENCE SCORE</span>
+                            <span class="meta-value text-success" id="conf-val">94.8%</span>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Right Panel: Diagnostics Console -->
+                <section class="panel console-panel">
+                    <div class="panel-header">
+                        <div class="panel-title-group">
+                            <i data-lucide="terminal"></i>
+                            <h2 class="panel-title">Live Sensor Feed</h2>
+                        </div>
+                        <span class="console-timestamp" id="console-time">SECURE FEED</span>
+                    </div>
+                    <div class="console-log" id="console-log">
+                        <div class="log-line system">[SYS] Terminal Initialized. Ready for data streaming...</div>
+                        <div class="log-line system">[SYS] Establishing Iridium satellite uplink to Singapore center...</div>
+                        <div class="log-line success">[UPLINK] Connected. Latency: 42ms. Data buffer clean.</div>
+                        <div class="log-line info">[COPERNICUS] CMEMS hourly current profiles parsed successfully.</div>
+                        <div class="log-line info">[NASA] MODIS sea surface temperature maps cached.</div>
+                    </div>
+                    
+                    <!-- Quick Specs Display -->
+                    <div class="telemetry-specs">
+                        <div class="spec-row">
+                            <span>Selected Target Zone:</span>
+                            <span id="spec-zone" class="text-glow">ALPHA (ENSO)</span>
+                        </div>
+                        <div class="spec-row">
+                            <span>Latitude/Longitude:</span>
+                            <span id="spec-coords">0.528° S, 120.449° W</span>
+                        </div>
+                        <div class="spec-row">
+                            <span>Primary Ocean Variable:</span>
+                            <span id="spec-variable">SST Anomaly (°C)</span>
+                        </div>
+                        <div class="spec-row">
+                            <span>Associated Commodity:</span>
+                            <span id="spec-commodity">Copper Futures (HG=F)</span>
+                        </div>
+                    </div>
+                </section>
+            </div>
+            
+            <!-- Other Tabs (Hidden initially, handled by JS) -->
+            <div class="workspace-grid hidden" id="zones-tab">
+                <!-- Content generated via app.js -->
+            </div>
+            <div class="workspace-grid hidden" id="sales-tab">
+                <!-- Content generated via app.js -->
+            </div>
+            <div class="workspace-grid hidden" id="modeler-tab">
+                <!-- Content generated via app.js -->
+            </div>
+        </main>
+    </div>
+    <!-- Floating Demo Tour Callout Overlay -->
+    <div id="demo-tour-callout" style="position: fixed; bottom: 30px; right: 30px; background: rgba(8, 12, 24, 0.95); border: 1.5px solid var(--color-cyan); padding: 20px; border-radius: 12px; width: 350px; box-shadow: 0 0 25px rgba(0, 242, 254, 0.25); backdrop-filter: blur(15px); z-index: 9999; display: none; flex-direction: column; gap: 12px; transition: all 0.4s ease; transform: translateY(20px); opacity: 0;">
+        <div style="display: flex; align-items: center; gap: 12px; border-bottom: 1px solid rgba(0, 242, 254, 0.2); padding-bottom: 8px;">
+            <i data-lucide="info" style="width: 18px; height: 18px; color: var(--color-cyan);"></i>
+            <h3 style="font-family: var(--font-header); font-size: 14px; font-weight: 700; color: var(--text-primary); letter-spacing: 0.5px;">DEMO ANIMATION TOUR</h3>
+        </div>
+        <p id="demo-tour-text" style="font-size: 12.5px; color: var(--text-secondary); line-height: 1.6; min-height: 48px;"></p>
+        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 10px; color: var(--text-muted); margin-top: 8px;">
+            <span id="demo-tour-progress">Step 1 of 5</span>
+            <span style="font-family: var(--font-mono); color: var(--color-cyan); letter-spacing: 1px;">ACTIVE MODE</span>
+        </div>
+    </div>
+
+    <script src="data-store.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
