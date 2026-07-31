@@ -1,7 +1,31 @@
 [build]
 publish = "signal_site"
 
+[functions]
+directory = "netlify/functions"
+
 [[redirects]]
 from = "/#pricing"
 to = "/"
+status = 200
+
+# Cashfree payment endpoints → Netlify Functions
+[[redirects]]
+from = "/api/create-order"
+to = "/.netlify/functions/create-order"
+status = 200
+
+[[redirects]]
+from = "/api/access"
+to = "/.netlify/functions/access"
+status = 200
+
+[[redirects]]
+from = "/api/payments_config"
+to = "/.netlify/functions/payments-config"
+status = 200
+
+[[redirects]]
+from = "/webhooks/cashfree"
+to = "/.netlify/functions/cashfree-webhook"
 status = 200

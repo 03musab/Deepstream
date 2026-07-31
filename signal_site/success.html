@@ -111,18 +111,21 @@
     .granted h2 { margin-bottom: 10px; }
     .granted .check { color: var(--positive); font-size: 2.4rem; line-height: 1; margin-bottom: 8px; }
     .error-state { color: var(--warn); }
+    .renew-state { color: var(--text-dim); }
+    .renew-state .renew-btn { margin-top: 16px; }
   </style>
 
   <script>
     const $ = (id) => document.getElementById(id);
 
-    function showGranted(inviteLink) {
+    function showGranted(inviteLink, expiresAt) {
       $("status-line").textContent = "Your Pro subscription is active.";
       $("success-state").className = "success-state granted";
+      const expiry = expiresAt ? new Date(expiresAt).toLocaleDateString() : "30 days";
       $("success-state").innerHTML = `
         <div class="check">&#10003;</div>
         <h2>Private channel access</h2>
-        <p class="section-sub">Your invite link is ready. It grants access to one Telegram account and expires in 30 days.</p>
+        <p class="section-sub">Your invite link is ready. It grants access to one Telegram account and is valid until ${expiry}. Renew monthly for uninterrupted access.</p>
         <div class="invite-box">${inviteLink}</div>
         <a class="btn btn-primary" href="${inviteLink}" target="_blank" rel="noopener">Join the Pro channel</a>
         <p class="table-note">Lost the link or need a fresh one? Email <a href="mailto:billing@deepstream.example">billing@deepstream.example</a>.</p>
@@ -131,7 +134,12 @@
 
     function showRevoked(message) {
       $("status-line").textContent = "Subscription not active";
-      $("status-detail").textContent = message || "Your subscription is no longer active.";
+      $("success-state").className = "success-state renew-state";
+      $("success-state").innerHTML = `
+        <h2>Renew your Pro access</h2>
+        <p class="section-sub">${message || "Your subscription is no longer active."} Renew with a fresh payment to keep receiving full setups.</p>
+        <a class="btn btn-primary renew-btn" href="/#pricing">Renew Pro access</a>
+      `;
     }
 
     function showError(message) {
@@ -142,18 +150,20 @@
 
     async function poll() {
       const params = new URLSearchParams(window.location.search);
-      const saleId = params.get("sale_id");
-      if (!saleId) return showError("No sale reference was found. Please use the link from the checkout confirmation.");
+      let orderId = params.get("order_id");
+      // Fallback: the frontend stashes the order id before redirecting.
+      if (!orderId) orderId = sessionStorage.getItem("deepstream_order_id");
+      if (!orderId) return showError("No order reference was found. Please use the link from the checkout confirmation.");
 
       let attempts = 0;
       const timer = setInterval(async () => {
         attempts += 1;
         try {
-          const res = await fetch(`/api/access?sale_id=${encodeURIComponent(saleId)}`, { cache: "no-store" });
+          const res = await fetch(`/api/access?order_id=${encodeURIComponent(orderId)}`, { cache: "no-store" });
           const data = await res.json();
           if (data.status === "granted") {
             clearInterval(timer);
-            showGranted(data.invite_link);
+            showGranted(data.invite_link, data.expires_at);
           } else if (data.status === "revoked") {
             clearInterval(timer);
             showRevoked(data.message);

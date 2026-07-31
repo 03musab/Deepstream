@@ -339,29 +339,130 @@ async function init() {
 }
 
 /* ------------------------------------------------------------------ */
-/* Checkout (Gumroad)                                                   */
+/* Checkout (Cashfree)                                                 */
 /* ------------------------------------------------------------------ */
 
-async function openCheckout() {
+let cashfreeMode = "sandbox";
+let cashfreeSdkPromise = null;
+
+function loadCashfreeSdk() {
+  if (window.Cashfree) return Promise.resolve(window.Cashfree);
+  if (!cashfreeSdkPromise) {
+    cashfreeSdkPromise = new Promise((resolve, reject) => {
+      const s = document.createElement("script");
+      s.src = "https://sdk.cashfree.com/js/v3/cashfree.js";
+      s.onload = () => resolve(window.Cashfree);
+      s.onerror = () => reject(new Error("Cashfree SDK failed to load"));
+      document.head.appendChild(s);
+    });
+  }
+  return cashfreeSdkPromise;
+}
+
+function setCheckoutStatus(msg, isError = false) {
+  const el = $("co-status");
+  if (el) {
+    el.textContent = msg;
+    el.classList.toggle("checkout-error", isError);
+  }
+}
+
+async function startCheckout() {
+  const email = ($("co-email").value || "").trim();
+  const phone = ($("co-phone").value || "").trim();
+  const submit = $("co-submit");
+  if (!/^\S+@\S+\.\S+$/.test(email)) {
+    setCheckoutStatus("Please enter a valid email.", true);
+    return;
+  }
+  submit.disabled = true;
+  setCheckoutStatus("Creating your order…");
   try {
-    const res = await fetch("/api/gumroad_config", { cache: "no-store" });
-    if (!res.ok) return;
-    const cfg = await res.json();
-    if (!cfg.configured || !cfg.checkout_url) return;
-    window.location.href = cfg.checkout_url;
-  } catch (e) { console.error("Failed to open Gumroad checkout:", e); }
+    const res = await fetch("/api/create-order", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ customer_email: email, customer_phone: phone }),
+    });
+    const order = await res.json();
+    if (!res.ok || !order.payment_session_id) throw new Error("order creation failed");
+    // Remember the order id so success.html can poll even if the redirect
+    // drops the query parameter.
+    sessionStorage.setItem("deepstream_order_id", order.order_id);
+
+    const Cashfree = await loadCashfreeSdk();
+    const cashfree = Cashfree({ mode: cashfreeMode });
+    const result = await cashfree.checkout({
+      paymentSessionId: order.payment_session_id,
+      redirectTarget: "_self",
+      // Pass order_id explicitly so success.html can poll even if Cashfree
+      // omits it from the redirect query (sessionStorage is a backup).
+      returnUrl: `${location.origin}/success.html?order_id=${encodeURIComponent(order.order_id)}`,
+    });
+    if (result && result.error) {
+      setCheckoutStatus("Payment could not be completed. Please try again.", true);
+      submit.disabled = false;
+    }
+  } catch (e) {
+    console.error("Checkout failed:", e);
+    setCheckoutStatus("Could not start checkout. Please try again.", true);
+    submit.disabled = false;
+  }
+}
+
+async function openCheckoutModal() {
+  const modal = $("checkout-modal");
+  if (!modal) return;
+  setCheckoutStatus("");
+  // Open the modal first so the status line is visible even when the
+  // config fetch fails below. Keep submit disabled until the config loads so
+  // the SDK mode (sandbox vs production) is always correct.
+  modal.classList.add("open");
+  modal.setAttribute("aria-hidden", "false");
+  $("co-submit").disabled = true;
+  try {
+    const cfg = await fetchJSON("/api/payments_config");
+    if (!cfg.configured) {
+      setCheckoutStatus("Checkout is temporarily unavailable.", true);
+      return;
+    }
+    cashfreeMode = cfg.mode;
+    const amount = `${cfg.currency === "USD" ? "$" : ""}${cfg.amount}${cfg.currency !== "USD" ? " " + cfg.currency : ""}`;
+    if ($("co-amount")) $("co-amount").textContent = amount;
+    if ($("co-submit")) {
+      $("co-submit").textContent = `Pay ${amount} — Subscribe`;
+      $("co-submit").disabled = false;
+    }
+    if ($("co-email")) $("co-email").focus();
+  } catch (e) {
+    console.error("Failed to load payments config:", e);
+    setCheckoutStatus("Checkout is temporarily unavailable.", true);
+  }
+}
+
+function closeCheckoutModal() {
+  const modal = $("checkout-modal");
+  if (modal) {
+    modal.classList.remove("open");
+    modal.setAttribute("aria-hidden", "true");
+  }
 }
 
 const buyBtn = $("buy-btn");
 if (buyBtn) {
-  buyBtn.addEventListener("click", async (e) => {
+  buyBtn.addEventListener("click", (e) => {
     e.preventDefault();
-    const original = buyBtn.textContent;
-    buyBtn.disabled = true;
-    await openCheckout();
-    buyBtn.disabled = false;
-    buyBtn.textContent = original;
+    openCheckoutModal();
   });
 }
+
+const coSubmit = $("co-submit");
+if (coSubmit) coSubmit.addEventListener("click", startCheckout);
+
+document.querySelectorAll("[data-close-checkout]").forEach((el) => {
+  el.addEventListener("click", closeCheckoutModal);
+});
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") closeCheckoutModal();
+});
 
 init();

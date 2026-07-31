@@ -106,16 +106,22 @@ TELEGRAM_CHANNEL_ENV = "DEEPSTREAM_CHANNEL_ID"
 PRO_CHANNEL_ENV = "DEEPSTREAM_PRO_CHANNEL_ID"
 
 # ---------------------------------------------------------------------------
-# Payments (Gumroad — merchant of record)
+# Payments (Cashfree — Payment Gateway)
 # ---------------------------------------------------------------------------
-GUMROAD_ACCESS_TOKEN_ENV = "GUMROAD_ACCESS_TOKEN"   # API token used to verify webhooks/sales
-GUMROAD_PRODUCT_ID_ENV = "GUMROAD_PRODUCT_ID"       # Pro $29/mo membership product id
-GUMROAD_CHECKOUT_URL_ENV = "GUMROAD_CHECKOUT_URL"   # hosted checkout link the buy button opens
+CASHFREE_CLIENT_ID_ENV = "CASHFREE_CLIENT_ID"          # public client id (dashboard -> API keys)
+CASHFREE_CLIENT_SECRET_ENV = "CASHFREE_CLIENT_SECRET"  # secret key — server-side only
+CASHFREE_ENV_ENV = "CASHFREE_ENV"                      # "sandbox" (default) or "production"
+CASHFREE_API_VERSION_ENV = "CASHFREE_API_VERSION"      # e.g. 2023-08-01
+CASHFREE_WEBHOOK_SECRET_ENV = "CASHFREE_WEBHOOK_SECRET"  # verifies webhook signatures
+CASHFREE_ORDER_AMOUNT_ENV = "CASHFREE_ORDER_AMOUNT"    # USD charged per Pro month
+CASHFREE_ORDER_CURRENCY_ENV = "CASHFREE_ORDER_CURRENCY"  # e.g. USD
+CASHFREE_SITE_URL_ENV = "CASHFREE_SITE_URL"            # base URL of the landing site
 
-# Gumroad subscription state cache (lean cache of access decisions).
+# Subscription state cache (lean cache of access decisions).
 SUBSCRIPTIONS_FILE = BASE_DIR / "data" / "subscriptions.json"
 
 # Server routes for the payment flow.
-GUMROAD_WEBHOOK_PATH = "/webhooks/gumroad"
+CASHFREE_WEBHOOK_PATH = "/webhooks/cashfree"
 ACCESS_API_PATH = "/api/access"
-GUMROAD_CONFIG_API_PATH = "/api/gumroad_config"
+CREATE_ORDER_API_PATH = "/api/create-order"
+PAYMENTS_CONFIG_API_PATH = "/api/payments_config"

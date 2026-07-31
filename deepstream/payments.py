@@ -1,31 +1,43 @@
-"""Gumroad payment integration and Pro fulfillment for Deepstream.
+"""Cashfree payment integration and Pro fulfillment for Deepstream.
 
 Flow:
-1. A visitor clicks "Subscribe" on the landing site. The buy button links to
-   the Gumroad hosted checkout for the Pro $29/mo membership.
-2. Gumroad sends webhook notifications to ``POST /webhooks/gumroad`` (this
-   module reacts to them). Because Gumroad does not sign webhook payloads,
-   ``sale`` events are verified against the Gumroad API before any access is
-   granted.
-3. When a sale/subscription becomes active, the bot mints a single-use invite
-   link to the private Pro Telegram channel and we store it against the
-   subscription.
-4. The customer's success page polls ``GET /api/access?sale_id=...`` and
+1. A visitor clicks "Subscribe" on the landing site. The frontend posts their
+   email/phone to ``POST /api/create-order``; this module creates a Cashfree
+   order (``POST /pg/orders``) for one month of Pro access ($29 USD) and
+   returns the ``payment_session_id`` used to render Cashfree's hosted/drop-in
+   checkout (JS SDK v3).
+2. The customer pays on Cashfree's hosted page. Cashfree redirects them back
+   to ``success.html?order_id=...`` and sends webhook notifications to
+   ``POST /webhooks/cashfree`` (this module reacts to them). Webhooks are
+   signed with an HMAC-SHA256 signature (``x-webhook-signature`` header) over
+   the raw payload plus the ``x-webhook-timestamp`` header, using the webhook
+   secret — requests that fail verification are rejected.
+3. When a ``ORDER_PAID`` event is verified, the bot mints a single-use invite
+   link to the private Pro Telegram channel and we store it against the order.
+4. The customer's success page polls ``GET /api/access?order_id=...`` and
    receives the invite link once the webhook has been processed.
 
-Access is granted when a verified sale exists for an active subscription and
-revoked on refund / subscription end / cancellation (matching Gumroad's
-subscription lifecycle).
+Access is granted when a verified, paid order exists and revoked on refund /
+failed payment (matching Cashfree's order lifecycle).
+
+Billing model: Cashfree's auto-recurring e-mandate subscriptions are INR-only,
+so the USD Pro tier is sold as a monthly order. Each successful payment grants
+30 days of access via a fresh invite link; renewals are new orders from the
+same customer.
 """
 
 from __future__ import annotations
 
+import base64
+import hashlib
+import hmac
 import json
 import os
 import threading
 import time
 import urllib.parse
 import urllib.request
+import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Optional
@@ -35,58 +47,133 @@ from deepstream.logging_setup import setup_logging
 
 logger = setup_logging()
 
-GUMROAD_API_BASE = "https://api.gumroad.com/v2"
+CASHFREE_API_BASE_SANDBOX = "https://sandbox.cashfree.com/pg"
+CASHFREE_API_BASE_PRODUCTION = "https://api.cashfree.com/pg"
+DEFAULT_API_VERSION = "2023-08-01"
 
 # Statuses that keep full Pro access.
-GRANT_STATUSES = {"active", "trialing"}
+GRANT_STATUSES = {"paid"}
 # Statuses that strip Pro access.
-REVOKE_STATUSES = {"ended", "refunded", "cancelled", "failed"}
+REVOKE_STATUSES = {"failed", "cancelled", "refunded"}
 
 # How far into the future a minted Telegram invite link is valid (seconds).
 INVITE_LINK_TTL_SECONDS = 30 * 24 * 3600  # 30 days
 
 
 # ---------------------------------------------------------------------------
-# Gumroad API (used to verify webhooks, since Gumroad does not sign them)
+# Cashfree API (server-side only — never expose the client secret to the site)
 # ---------------------------------------------------------------------------
 
-def gumroad_api_get(path: str, params: Optional[dict[str, str]] = None) -> dict[str, Any]:
-    """GET ``path`` on the Gumroad API. Raises on network/HTTP errors."""
-    token = os.environ.get(config.GUMROAD_ACCESS_TOKEN_ENV)
-    if not token:
-        raise RuntimeError(f"{config.GUMROAD_ACCESS_TOKEN_ENV} is not configured")
-    query = {"access_token": token}
-    query.update(params or {})
-    url = f"{GUMROAD_API_BASE}/{path}?{urllib.parse.urlencode(query)}"
-    req = urllib.request.Request(url, method="GET")
+def cashfree_base_url() -> str:
+    mode = os.environ.get(config.CASHFREE_ENV_ENV, "sandbox").strip().lower()
+    return CASHFREE_API_BASE_PRODUCTION if mode == "production" else CASHFREE_API_BASE_SANDBOX
+
+
+def _cashfree_request(method: str, path: str,
+                      payload: Optional[dict[str, Any]] = None) -> dict[str, Any]:
+    """Call the Cashfree PG API. Raises on network/HTTP errors."""
+    client_id = os.environ.get(config.CASHFREE_CLIENT_ID_ENV)
+    client_secret = os.environ.get(config.CASHFREE_CLIENT_SECRET_ENV)
+    if not (client_id and client_secret):
+        raise RuntimeError(
+            f"{config.CASHFREE_CLIENT_ID_ENV} / {config.CASHFREE_CLIENT_SECRET_ENV} not configured"
+        )
+    headers = {
+        "x-api-version": os.environ.get(config.CASHFREE_API_VERSION_ENV, DEFAULT_API_VERSION),
+        "x-client-id": client_id,
+        "x-client-secret": client_secret,
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+    }
+    body = json.dumps(payload).encode() if payload is not None else None
+    req = urllib.request.Request(
+        f"{cashfree_base_url()}{path}", data=body, method=method, headers=headers
+    )
     with urllib.request.urlopen(req, timeout=20) as resp:
         return json.loads(resp.read().decode("utf-8"))
 
 
-def fetch_sale(sale_id: str) -> dict[str, Any]:
-    """Fetch a sale from the Gumroad API. Raises on network/HTTP errors."""
-    data = gumroad_api_get(f"sales/{urllib.parse.quote(sale_id)}")
-    if not data.get("success"):
-        raise RuntimeError(f"Gumroad API rejected sale lookup: {data.get('message')}")
-    return data.get("sale") or {}
+def create_cashfree_order(customer_email: str, customer_phone: str = "") -> dict[str, Any]:
+    """Create a Cashfree order for one month of Pro access.
+
+    Returns ``{order_id, payment_session_id, order_status}``. The
+    ``payment_session_id`` is what the frontend hands to the Cashfree JS SDK.
+    """
+    order_id = "ds_" + uuid.uuid4().hex[:16]
+    amount = float(os.environ.get(config.CASHFREE_ORDER_AMOUNT_ENV, "29"))
+    currency = os.environ.get(config.CASHFREE_ORDER_CURRENCY_ENV, "USD")
+    site_url = os.environ.get(config.CASHFREE_SITE_URL_ENV, "").strip().rstrip("/")
+
+    payload: dict[str, Any] = {
+        "order_id": order_id,
+        "order_amount": amount,
+        "order_currency": currency,
+        "order_note": "Deepstream Pro — 30 day access",
+        "customer_details": {
+            "customer_id": "cust_" + uuid.uuid4().hex[:12],
+            "customer_email": customer_email,
+            "customer_phone": customer_phone,
+        },
+    }
+    if site_url:
+        payload["order_meta"] = {"return_url": f"{site_url}/success.html"}
+
+    data = _cashfree_request("POST", "/pg/orders", payload)
+    return {
+        "order_id": order_id,
+        "payment_session_id": data.get("payment_session_id") or "",
+        "order_status": data.get("order_status") or "",
+    }
 
 
-def verify_sale(sale: dict[str, Any]) -> bool:
-    """Return True if a Gumroad sale is a valid, paid, un-refunded Pro sale."""
-    product_id = os.environ.get(config.GUMROAD_PRODUCT_ID_ENV)
-    if product_id and sale.get("product_id") != product_id:
-        logger.warning("Sale %s is for a different product", sale.get("id"))
+def fetch_order(order_id: str) -> dict[str, Any]:
+    """Fetch an order from the Cashfree API. Raises on network/HTTP errors."""
+    return _cashfree_request("GET", f"/pg/orders/{urllib.parse.quote(order_id)}")
+
+
+def payments_config() -> dict[str, Any]:
+    """Public-safe config the landing page needs to render the Cashfree SDK."""
+    return {
+        "configured": bool(os.environ.get(config.CASHFREE_CLIENT_ID_ENV)),
+        "mode": os.environ.get(config.CASHFREE_ENV_ENV, "sandbox").strip().lower(),
+        "amount": float(os.environ.get(config.CASHFREE_ORDER_AMOUNT_ENV, "29")),
+        "currency": os.environ.get(config.CASHFREE_ORDER_CURRENCY_ENV, "USD"),
+    }
+
+
+# ---------------------------------------------------------------------------
+# Webhook signature verification
+# ---------------------------------------------------------------------------
+
+def verify_webhook_signature(raw_body: bytes, headers: dict[str, str]) -> bool:
+    """Verify the Cashfree webhook ``x-webhook-signature`` header.
+
+    Cashfree signs the payload with HMAC-SHA256 using the webhook secret
+    configured in the dashboard. The signed message is the raw request body
+    (optionally prefixed with the ``x-webhook-timestamp`` header depending on
+    API version). We accept either form and compare in constant time.
+    """
+    secret = os.environ.get(config.CASHFREE_WEBHOOK_SECRET_ENV, "")
+    signature = (headers.get("x-webhook-signature") or "").strip()
+    if not (secret and signature):
+        logger.warning("Webhook secret or signature header missing")
         return False
-    if not sale.get("paid"):
-        logger.warning("Sale %s is not paid", sale.get("id"))
-        return False
-    if sale.get("refunded"):
-        logger.warning("Sale %s has been refunded", sale.get("id"))
-        return False
-    if not sale.get("subscription_id"):
-        logger.warning("Sale %s is not attached to a subscription", sale.get("id"))
-        return False
-    return True
+
+    body = raw_body.decode("utf-8", errors="replace")
+    timestamp = (headers.get("x-webhook-timestamp") or "").strip()
+    # Cashfree has shipped both body-only and timestamp+body signature schemes
+    # (some versions insert a separator). Accept the documented variants.
+    candidates = [body]
+    if timestamp:
+        candidates += [timestamp + body, timestamp + "." + body]
+
+    for message in candidates:
+        expected = base64.b64encode(
+            hmac.new(secret.encode("utf-8"), message.encode("utf-8"), hashlib.sha256).digest()
+        ).decode("ascii")
+        if hmac.compare_digest(expected, signature):
+            return True
+    return False
 
 
 # ---------------------------------------------------------------------------
@@ -124,31 +211,27 @@ def revoke_channel_invite(bot_token: str, chat_id: str, invite_link: str) -> Non
 
 
 # ---------------------------------------------------------------------------
-# Subscription store (lean cache of access decisions)
+# Subscription store (lean cache of access decisions, keyed by order_id)
 # ---------------------------------------------------------------------------
 
 class SubscriptionStore:
-    """Persist subscription state so the success page can grant access.
+    """Persist order state so the success page can grant access.
 
     Shape (data/subscriptions.json)::
 
         {
-          "subscriptions": {
-            "<subscription_id>": {
-              "subscription_id": "...",
+          "orders": {
+            "<order_id>": {
+              "order_id": "...",
+              "cf_order_id": "...",
               "customer_id": "...",
               "customer_email": "...",
-              "status": "active",
+              "status": "paid" | "failed" | "cancelled" | "refunded",
+              "amount": 29.0,
+              "currency": "USD",
               "invite_link": "https://t.me/...",
+              "invite_expires_at": "...",
               "created_at": "...", "updated_at": "...", "occurred_at": "..."
-            }
-          },
-          "sales": {
-            "<sale_id>": {
-              "sale_id": "...",
-              "subscription_id": "...",
-              "customer_email": "...",
-              "status": "completed"
             }
           },
           "processed_events": {"<event_id>": "<occurred_at>"}
@@ -162,12 +245,12 @@ class SubscriptionStore:
     def load(self) -> dict[str, Any]:
         with self._lock:
             if not self.path.exists():
-                return {"subscriptions": {}, "sales": {}, "processed_events": {}}
+                return {"orders": {}, "processed_events": {}}
             try:
                 return json.loads(self.path.read_text(encoding="utf-8"))
             except (json.JSONDecodeError, OSError):
                 logger.exception("Corrupt subscription store; starting empty")
-                return {"subscriptions": {}, "sales": {}, "processed_events": {}}
+                return {"orders": {}, "processed_events": {}}
 
     def save(self, data: dict[str, Any]) -> None:
         with self._lock:
@@ -184,45 +267,55 @@ class SubscriptionStore:
         data["processed_events"][event_id] = occurred_at
         self.save(data)
 
-    def access_for_sale(self, sale_id: str) -> dict[str, Any]:
+    def access_for_order(self, order_id: str) -> dict[str, Any]:
         """Return the access state a success page should display."""
         data = self.load()
-        sale = data["sales"].get(sale_id)
-        if not sale:
-            return {"status": "pending", "message": "Sale not yet seen."}
+        order = data["orders"].get(order_id)
+        if not order:
+            return {"status": "pending", "message": "Order not yet seen."}
 
-        sub = data["subscriptions"].get(sale.get("subscription_id", ""))
-        if not sub:
-            return {"status": "pending", "message": "Processing payment…"}
-        if sub.get("status") in GRANT_STATUSES and sub.get("invite_link"):
+        if order.get("status") in GRANT_STATUSES and order.get("invite_link"):
             return {
                 "status": "granted",
-                "invite_link": sub["invite_link"],
-                "expires_at": sub.get("invite_expires_at"),
+                "invite_link": order["invite_link"],
+                "expires_at": order.get("invite_expires_at"),
             }
-        if sub.get("status") in REVOKE_STATUSES:
-            return {"status": "revoked", "message": "Subscription canceled or ended."}
+        if order.get("status") in REVOKE_STATUSES:
+            return {"status": "revoked", "message": "Payment failed or was refunded."}
         return {"status": "pending", "message": "Processing payment…"}
 
-    def _record_sale(self, sale_id: str, *, subscription_id: str,
-                     customer_email: Optional[str], status: str = "completed") -> None:
+    def _record_order(self, order_id: str, *, customer_email: Optional[str],
+                      status: str = "pending", cf_order_id: str = "",
+                      amount: Optional[float] = None, currency: Optional[str] = None,
+                      occurred_at: str = "") -> None:
         data = self.load()
-        data["sales"][sale_id] = {
-            "sale_id": sale_id,
-            "subscription_id": subscription_id,
-            "customer_email": customer_email,
+        now = datetime.now(timezone.utc).isoformat()
+        existing = data["orders"].get(order_id, {})
+        data["orders"][order_id] = {
+            "order_id": order_id,
+            "cf_order_id": existing.get("cf_order_id") or cf_order_id,
+            "customer_id": existing.get("customer_id", ""),
+            "customer_email": customer_email or existing.get("customer_email"),
             "status": status,
+            "amount": amount if amount is not None else existing.get("amount"),
+            "currency": currency or existing.get("currency"),
+            "invite_link": existing.get("invite_link"),
+            "invite_expires_at": existing.get("invite_expires_at"),
+            "created_at": existing.get("created_at") or now,
+            "updated_at": now,
+            "occurred_at": occurred_at or existing.get("occurred_at"),
         }
         self.save(data)
 
-    def _ensure_access(self, subscription_id: str, *, customer_id: str,
-                       customer_email: Optional[str]) -> Optional[str]:
-        """Grant access for ``subscription_id``; mint the invite link once."""
+    def _grant(self, order_id: str, *, cf_order_id: str = "",
+               customer_email: Optional[str] = None,
+               amount: Optional[float] = None, currency: Optional[str] = None,
+               occurred_at: str = "") -> Optional[str]:
+        """Mark an order paid and mint the invite link once."""
         data = self.load()
-        sub = data["subscriptions"].get(subscription_id)
-
-        if sub and sub.get("invite_link") and sub.get("status") in GRANT_STATUSES:
-            return sub["invite_link"]
+        existing = data["orders"].get(order_id, {})
+        if existing.get("status") in GRANT_STATUSES and existing.get("invite_link"):
+            return existing["invite_link"]
 
         token = os.environ.get(config.TELEGRAM_TOKEN_ENV)
         pro_channel = os.environ.get(config.PRO_CHANNEL_ENV)
@@ -231,186 +324,161 @@ class SubscriptionStore:
                 "Pro channel not configured (set %s and %s) — cannot mint invite link",
                 config.TELEGRAM_TOKEN_ENV, config.PRO_CHANNEL_ENV,
             )
+            self._record_order(order_id, customer_email=customer_email, status="paid",
+                               cf_order_id=cf_order_id, amount=amount, currency=currency,
+                               occurred_at=occurred_at)
             return None
 
         now = datetime.now(timezone.utc).isoformat()
         invite_link = create_channel_invite(token, pro_channel)
-        existing = sub or {}
-        sub = {
-            "subscription_id": subscription_id,
-            "customer_id": existing.get("customer_id") or customer_id,
-            "customer_email": existing.get("customer_email") or customer_email,
-            "status": "active",
+        data["orders"][order_id] = {
+            "order_id": order_id,
+            "cf_order_id": cf_order_id or existing.get("cf_order_id", ""),
+            "customer_id": existing.get("customer_id", ""),
+            "customer_email": customer_email or existing.get("customer_email"),
+            "status": "paid",
+            "amount": amount if amount is not None else existing.get("amount"),
+            "currency": currency or existing.get("currency"),
             "invite_link": invite_link,
             "invite_expires_at": datetime.fromtimestamp(
                 time.time() + INVITE_LINK_TTL_SECONDS, tz=timezone.utc
             ).isoformat(),
             "created_at": existing.get("created_at") or now,
             "updated_at": now,
-            "occurred_at": existing.get("occurred_at"),
+            "occurred_at": occurred_at or existing.get("occurred_at"),
         }
-        data["subscriptions"][subscription_id] = sub
         self.save(data)
-        logger.info("Granted Pro access for subscription %s", subscription_id)
+        logger.info("Granted Pro access for order %s", order_id)
         return invite_link
 
-    def _sync_subscription(self, subscription_id: str, *, status: str,
-                           customer_email: Optional[str] = None) -> None:
-        """Store subscription state and grant/revoke access per the status."""
-        data = self.load()
-        existing = data["subscriptions"].get(subscription_id, {})
-        now = datetime.now(timezone.utc).isoformat()
-        record = {
-            "subscription_id": subscription_id,
-            "customer_id": existing.get("customer_id", ""),
-            "customer_email": customer_email or existing.get("customer_email"),
-            "status": status,
-            "invite_link": existing.get("invite_link"),
-            "invite_expires_at": existing.get("invite_expires_at"),
-            "created_at": existing.get("created_at") or now,
-            "updated_at": now,
-            "occurred_at": existing.get("occurred_at"),
-        }
-        data["subscriptions"][subscription_id] = record
-        self.save(data)
+    def _mark_failed(self, order_id: str, *, customer_email: Optional[str] = None,
+                     occurred_at: str = "") -> None:
+        self._record_order(order_id, customer_email=customer_email, status="failed",
+                           occurred_at=occurred_at)
 
-        if status in GRANT_STATUSES and record.get("invite_link"):
-            return
-        if status in REVOKE_STATUSES:
-            self._revoke_access(subscription_id)
-        else:
-            self._ensure_access(
-                subscription_id,
-                customer_id=record["customer_id"],
-                customer_email=record["customer_email"],
-            )
-
-    def _revoke_access(self, subscription_id: str) -> None:
+    def _revoke(self, order_id: str, *, occurred_at: str = "") -> None:
         data = self.load()
-        sub = data["subscriptions"].get(subscription_id)
-        if not sub:
+        order = data["orders"].get(order_id)
+        if not order:
             return
-        invite_link = sub.get("invite_link")
+        invite_link = order.get("invite_link")
         token = os.environ.get(config.TELEGRAM_TOKEN_ENV)
         pro_channel = os.environ.get(config.PRO_CHANNEL_ENV)
         if invite_link and token and pro_channel:
             try:
                 revoke_channel_invite(token, pro_channel, invite_link)
             except Exception:
-                logger.exception("Failed to revoke invite link for %s", subscription_id)
-        sub["invite_link"] = None
-        sub["invite_expires_at"] = None
-        sub["updated_at"] = datetime.now(timezone.utc).isoformat()
-        data["subscriptions"][subscription_id] = sub
+                logger.exception("Failed to revoke invite link for %s", order_id)
+        order["invite_link"] = None
+        order["invite_expires_at"] = None
+        order["status"] = "refunded"
+        order["updated_at"] = datetime.now(timezone.utc).isoformat()
+        order["occurred_at"] = occurred_at or order.get("occurred_at")
+        data["orders"][order_id] = order
         self.save(data)
-        logger.info("Revoked Pro access for subscription %s", subscription_id)
+        logger.info("Revoked Pro access for order %s", order_id)
 
 
 # ---------------------------------------------------------------------------
 # Webhook dispatch
 # ---------------------------------------------------------------------------
 
-# Gumroad resource names → our handlers.
-RESOURCE_GRANT = {"sale", "subscription_restarted"}
-RESOURCE_REVOKE = {"refund", "subscription_ended", "cancellation"}
-RESOURCE_IGNORE = {"dispute", "dispute_won", "subscription_updated"}
+# Cashfree event names → how we treat them.
+GRANT_TYPES = {"ORDER_PAID"}
+REVOKE_TYPES = {"REFUND_STATUS", "REFUND_STATUS_CHANGE"}
+FAIL_TYPES = {"ORDER_FAILED", "ORDER_CANCELLED", "PAYMENT_FAILED"}
 
 
-def _parse_webhook_body(raw_body: bytes, content_type: str) -> dict[str, Any]:
-    """Parse a Gumroad webhook body (form-encoded Ping payload or JSON)."""
-    ctype = (content_type or "").lower()
-    text = raw_body.decode("utf-8")
-    if "json" in ctype:
-        return json.loads(text)
-    return {k: v[0] if isinstance(v, list) else v
-            for k, v in urllib.parse.parse_qs(text).items()}
-
-
-def _bool(value: Any) -> bool:
-    if isinstance(value, bool):
-        return value
-    if isinstance(value, (int, float)):
-        return bool(value)
-    return str(value).strip().lower() in {"true", "1", "yes"}
+def _order_id_from_event(event: dict[str, Any]) -> str:
+    data = event.get("data") or {}
+    order = data.get("order") or {}
+    refund = data.get("refund") or {}
+    return str(
+        order.get("order_id")
+        or data.get("order_id")
+        or refund.get("order_id")
+        or ""
+    )
 
 
 def handle_webhook_event(event: dict[str, Any]) -> str:
-    """Process a single Gumroad webhook event. Returns a human-readable summary."""
+    """Process a single Cashfree webhook event. Returns a human-readable summary."""
     store = SubscriptionStore()
-    resource = event.get("resource_name", "")
-    sale_id = event.get("sale_id") or event.get("id")
-    subscription_id = event.get("subscription_id")
-    customer_email = event.get("email") or event.get("user_email")
-    occurred_at = event.get("sale_timestamp") or event.get("created_at") or ""
+    etype = event.get("type", "")
+    data = event.get("data") or {}
+    order = data.get("order") or {}
+    customer = data.get("customer_details") or {}
+    order_id = _order_id_from_event(event)
+    occurred_at = event.get("event_time") or event.get("created_at") or ""
+    customer_email = customer.get("customer_email")
 
-    if resource in RESOURCE_GRANT:
-        if not sale_id:
-            return f"ignored {resource} (no sale_id)"
-        event_id = f"{resource}:{sale_id}"
-        if store.is_processed(event_id):
-            return f"duplicate {event_id}"
+    if not order_id:
+        return f"ignored {etype} (no order_id)"
 
-        sale = fetch_sale(sale_id)  # raises → 500 → Gumroad retries
-        if not verify_sale(sale):
+    event_id = f"{etype}:{order_id}"
+    if store.is_processed(event_id):
+        return f"duplicate {event_id}"
+
+    if etype in GRANT_TYPES:
+        # Verify against the Cashfree API before granting access.
+        fetched = fetch_order(order_id)  # raises → 500 → Cashfree retries
+        if fetched.get("order_status") != "PAID":
             store._mark_processed(event_id, occurred_at)
-            return f"rejected {resource} (unverified)"
+            return f"rejected {etype} (order not PAID)"
+        expected_amount = float(os.environ.get(config.CASHFREE_ORDER_AMOUNT_ENV, "29"))
+        if float(fetched.get("order_amount") or 0) != expected_amount:
+            store._mark_processed(event_id, occurred_at)
+            return f"rejected {etype} (amount mismatch)"
+        if fetched.get("order_currency") != os.environ.get(
+                config.CASHFREE_ORDER_CURRENCY_ENV, "USD"):
+            store._mark_processed(event_id, occurred_at)
+            return f"rejected {etype} (currency mismatch)"
 
-        sub_id = subscription_id or sale.get("subscription_id")
-        store._record_sale(
-            sale_id,
-            subscription_id=sub_id or "",
-            customer_email=customer_email or sale.get("email"),
+        store._grant(
+            order_id,
+            cf_order_id=str(fetched.get("cf_order_id") or order.get("cf_order_id") or ""),
+            customer_email=customer_email or (fetched.get("customer_details") or {}).get("customer_email"),
+            amount=fetched.get("order_amount"),
+            currency=fetched.get("order_currency"),
+            occurred_at=occurred_at,
         )
-        if sub_id:
-            store._sync_subscription(
-                sub_id,
-                status="active",
-                customer_email=customer_email or sale.get("email"),
-            )
         store._mark_processed(event_id, occurred_at)
-        return f"processed {resource} {sale_id}"
+        return f"processed {etype} {order_id}"
 
-    if resource in RESOURCE_REVOKE:
-        if not subscription_id:
-            return f"ignored {resource} (no subscription_id)"
-        event_id = f"{resource}:{subscription_id}"
-        if store.is_processed(event_id):
-            return f"duplicate {event_id}"
-
-        if resource == "cancellation":
-            # A cancellation request keeps access until the period ends;
-            # only mark it as cancelled once the subscription has ended.
-            store._sync_subscription(subscription_id, status="cancelled",
-                                     customer_email=customer_email)
-        else:
-            store._sync_subscription(subscription_id, status="ended",
-                                     customer_email=customer_email)
+    if etype in REVOKE_TYPES:
+        refund = data.get("refund") or {}
+        if refund.get("refund_status") not in ("SUCCESS", "PENDING", None):
+            store._mark_processed(event_id, occurred_at)
+            return f"ignored {etype} (refund not successful)"
+        store._revoke(order_id, occurred_at=occurred_at)
         store._mark_processed(event_id, occurred_at)
-        return f"processed {resource} {subscription_id}"
+        return f"processed {etype} {order_id}"
 
-    # Ignore remaining resources but still mark them seen.
-    if sale_id:
-        event_id = f"{resource}:{sale_id}"
-    elif subscription_id:
-        event_id = f"{resource}:{subscription_id}"
-    else:
-        return f"ignored {resource}"
-    if not store.is_processed(event_id):
+    if etype in FAIL_TYPES:
+        store._mark_failed(order_id, customer_email=customer_email, occurred_at=occurred_at)
         store._mark_processed(event_id, occurred_at)
-    return f"ignored {resource}"
+        return f"processed {etype} {order_id}"
+
+    # Ignore remaining event types but still mark them seen.
+    store._mark_processed(event_id, occurred_at)
+    return f"ignored {etype}"
 
 
-def handle_webhook_request(raw_body: bytes, content_type: str) -> tuple[int, dict[str, Any]]:
-    """Process a Gumroad webhook request.
+def handle_webhook_request(raw_body: bytes, headers: dict[str, str]) -> tuple[int, dict[str, Any]]:
+    """Process a Cashfree webhook request.
 
-    Returns ``(http_status, json_body)``. Gumroad does not sign webhook payloads,
-    so ``sale`` events are verified against the Gumroad API before granting access.
-    Any non-2xx response makes Gumroad retry hourly for up to 3 hours.
+    Returns ``(http_status, json_body)``. Requests with an invalid
+    ``x-webhook-signature`` are rejected with 401. Any other non-2xx response
+    makes Cashfree retry.
     """
+    if not verify_webhook_signature(raw_body, headers):
+        logger.warning("Cashfree webhook signature verification failed")
+        return 401, {"error": "invalid signature"}
+
     try:
-        event = _parse_webhook_body(raw_body, content_type)
+        event = json.loads(raw_body.decode("utf-8"))
     except (json.JSONDecodeError, ValueError):
-        logger.warning("Gumroad webhook body could not be parsed")
+        logger.warning("Cashfree webhook body could not be parsed")
         return 400, {"error": "invalid body"}
 
     if not event:
@@ -419,6 +487,6 @@ def handle_webhook_request(raw_body: bytes, content_type: str) -> tuple[int, dic
     try:
         summary = handle_webhook_event(event)
     except Exception:
-        logger.exception("Failed to process Gumroad webhook")
+        logger.exception("Failed to process Cashfree webhook")
         return 500, {"error": "processing failed"}
     return 200, {"success": True, "summary": summary}

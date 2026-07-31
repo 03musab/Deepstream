@@ -62,27 +62,47 @@ DEEPSTREAM_CHANNEL_ID=<private channel id>
   config-driven and auditable in `deepstream/config.py`.
 
 ## Remaining Launch Steps
-1. **Payment integration (implemented).** Gumroad (Merchant of Record) handles
-   the $29/mo Pro membership via a hosted checkout. Webhooks arrive at
-   `POST /webhooks/gumroad`; because Gumroad does not sign payloads, `sale`
-   events are verified against the Gumroad API in `deepstream/payments.py`
-   before access is granted. On a verified sale the bot mints a single-use
-   invite link to the private Pro Telegram channel. The product's "Redirect
-   URL" sends the customer to `success.html?sale_id=...`, which polls
-   `/api/access` and shows the invite link. Revocation
-   (`refund`/`subscription_ended`/`cancellation`) revokes the link.
-   **Setup still required:** create the Gumroad Pro membership, set the
-   redirect URL + resource subscriptions, generate an API token, and fill in
-   the Gumroad vars in `.env`.
+1. **Payment integration (implemented).** Cashfree Payment Gateway handles the
+   $29/mo Pro membership. A visitor enters their email on the landing page;
+   `POST /api/create-order` creates a Cashfree order and returns a
+   `payment_session_id`, which the Cashfree JS SDK (`cashfree.checkout`)
+   renders as a hosted/drop-in checkout. Cashfree sends **signed** webhooks to
+   `POST /webhooks/cashfree`; `deepstream/payments.py` verifies the
+   `x-webhook-signature` (HMAC-SHA256) before doing anything. On a verified
+   `ORDER_PAID` (re-checked against the Cashfree API) the bot mints a
+   single-use invite link to the private Pro Telegram channel, keyed by
+   `order_id`. The checkout redirects to `success.html`, which polls
+   `/api/access?order_id=...` and shows the invite link. Revocation
+   (`REFUND_STATUS`, `ORDER_FAILED`, `ORDER_CANCELLED`) revokes the link.
+   **Hosting:** the site is static on Netlify; the payment backend is a set of
+   Netlify Functions (`netlify/functions/`) that mirror `deepstream/payments.py`
+   and store order state in Netlify Blobs. The Python server remains the local
+   dev backend (`python -m deepstream.server`).
+   **Setup still required:** create the Cashfree account (sandbox keys work
+   immediately; production needs KYC + ~24–48h activation), set the webhook
+   URL + secret, whitelist your domain, and fill in the vars in `.env` /
+   Netlify environment variables (see `.env.example`).
 2. Create the private Telegram channel, add the bot as admin (invite-link
-   permission), set `DEEPSTREAM_PRO_CHANNEL_ID`; fill in the rest of `.env`.
+   permission), set `DEEPSTREAM_PRO_CHANNEL_ID`.
 3. Run `./run_weekly.sh` and confirm delivery.
 
 ### Go-live checklist for payments
-- [ ] `GUMROAD_ACCESS_TOKEN`, `GUMROAD_PRODUCT_ID`, `GUMROAD_CHECKOUT_URL` set
-- [ ] Gumroad product "Redirect URL" = `https://deepstreamofficial.netlify.app/success.html`
-- [ ] Resource subscriptions registered for `sale`, `refund`, `cancellation`,
-      `subscription_updated`, `subscription_ended`, `subscription_restarted`
-      → `https://<your-domain>/webhooks/gumroad`
+- [ ] Cashfree sandbox credentials (`CASHFREE_CLIENT_ID` / `CASHFREE_CLIENT_SECRET`) set
+- [ ] `CASHFREE_WEBHOOK_SECRET` set; webhook URL registered in the Cashfree
+      dashboard for `ORDER_PAID`, `ORDER_FAILED`, `ORDER_CANCELLED`,
+      `REFUND_STATUS` → `https://<your-domain>/webhooks/cashfree`
+- [ ] Domain whitelisted in Cashfree dashboard (production)
 - [ ] `DEEPSTREAM_BOT_TOKEN` + `DEEPSTREAM_PRO_CHANNEL_ID` set; bot is admin of the Pro channel
-- [ ] A test purchase (Gumroad test purchase) confirms end-to-end invite delivery
+- [ ] `CASHFREE_SITE_URL` points at the deployed site
+- [ ] Test order in sandbox (test cards: CVV `123`, OTP `111000`, UPI
+      `testsuccess@gocash`) confirms end-to-end invite delivery
+- [ ] Confirm which webhook signature variant Cashfree delivers (body-only vs
+      timestamp+body) against a real dashboard test event — the code accepts
+      both, but verify before going live
+- [ ] Production KYC submitted; `CASHFREE_ENV=production` after activation
+
+> **Billing note:** Cashfree's auto-recurring e-mandate subscriptions are
+> INR-only. The USD Pro tier is sold as a monthly order — each successful
+> payment grants 30 days via a fresh invite link, and renewals are new orders
+> from the same customer. Switch to INR (₹2,499/mo) to use native Cashfree
+> subscriptions with UPI AutoPay / eNACH.
