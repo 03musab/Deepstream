@@ -16,6 +16,7 @@ from datetime import datetime
 from pathlib import Path
 
 from deepstream import config
+from deepstream.chart_data import build_chart_data
 from deepstream.logging_setup import setup_logging
 from deepstream.signal_engine import (
     compute_all_signals,
@@ -108,6 +109,9 @@ def _copy_to_site() -> None:
         config.SITE_SIGNAL_FILE.write_text(config.SIGNAL_FILE.read_text())
     if config.TRACK_RECORD_FILE.exists():
         config.SITE_TRACK_FILE.write_text(config.TRACK_RECORD_FILE.read_text())
+    # Chart data is derived from the data CSVs + track record; publish it as a
+    # static asset so the charts render on static hosts (Netlify).
+    config.SITE_CHART_FILE.write_text(json.dumps(build_chart_data()))
 
 
 def main(argv: list[str] | None = None) -> int:

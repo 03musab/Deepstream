@@ -17,6 +17,7 @@ SIGNAL_FILE = BASE_DIR / "latest_signal.json"
 TRACK_RECORD_FILE = BASE_DIR / "track_record.json"
 SITE_SIGNAL_FILE = BASE_DIR / "signal_site" / "latest_signal.json"
 SITE_TRACK_FILE = BASE_DIR / "signal_site" / "track_record.json"
+SITE_CHART_FILE = BASE_DIR / "signal_site" / "chart_data.json"
 LOG_FILE = BASE_DIR / "deepstream.log"
 
 # ---------------------------------------------------------------------------
