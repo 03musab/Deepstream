@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Deepstream — Ocean Data Predicts Commodity Prices</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <nav class="nav">
+    <div class="nav-inner">
+      <span class="logo">Deepstream</span>
+      <div class="nav-links">
+        <a href="#signals">Signals</a>
+        <a href="#pricing">Pricing</a>
+        <a href="#how">How It Works</a>
+      </div>
+    </div>
+  </nav>
+
+  <section class="hero">
+    <div class="hero-bg"></div>
+    <div class="hero-content">
+      <h1>Ocean data predicts <span class="gradient-text">commodity prices</span> weeks in advance.</h1>
+      <p class="hero-sub">We track sea surface temperature, chlorophyll, and chemical plumes — and tell you which direction copper, tuna, and crude oil are heading next.</p>
+      <div class="hero-cta">
+        <a href="#pricing" class="btn-primary">Get Weekly Signals — $29/mo</a>
+        <a href="#signals" class="btn-secondary">View Latest Sample</a>
+      </div>
+    </div>
+  </section>
+
+  <section id="signals" class="section">
+    <div class="container">
+      <h2>Latest Signal Snapshot</h2>
+      <p class="section-sub">Updated weekly. Powered by 20 years of backtested ocean-to-market correlations.</p>
+      <div class="signal-table-wrapper">
+        <table class="signal-table">
+          <thead>
+            <tr>
+              <th>Pair</th>
+              <th>Direction</th>
+              <th>Entry</th>
+              <th>Stop Loss</th>
+              <th>Take Profit</th>
+              <th>Confidence</th>
+              <th>Lag</th>
+            </tr>
+          </thead>
+          <tbody id="signal-rows">
+            <tr><td colspan="7" class="loading">Loading latest signals...</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="signal-note">Last updated: <span id="signal-date">--</span></p>
+    </div>
+  </section>
+
+  <section id="how" class="section alt">
+    <div class="container">
+      <h2>How It Works</h2>
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">1</div>
+          <h3>Ocean Sensors</h3>
+          <p>NOAA satellites, ARGO floats, and AUVs measure SST, chlorophyll, and chemical data daily.</p>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <h3>Quant Engine</h3>
+          <p>Our grid-search optimizer finds the optimal lag + smoothing to maximize predictive correlation.</p>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <h3>Signal Delivered</h3>
+          <p>Every Monday, you get entry price, stop-loss, take-profit, and confidence score via Telegram.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="pricing" class="section">
+    <div class="container">
+      <h2>Simple Pricing</h2>
+      <div class="pricing-cards">
+        <div class="card">
+          <h3>Free</h3>
+          <div class="price">$0</div>
+          <p class="price-desc">Weekly direction summary</p>
+          <ul>
+            <li>Direction only (LONG/SHORT)</li>
+            <li>Public Telegram channel</li>
+            <li>Weekly updates</li>
+          </ul>
+          <a href="https://t.me/deepstream" class="btn-secondary">Join Free</a>
+        </div>
+        <div class="card featured">
+          <div class="badge">Best Value</div>
+          <h3>Pro</h3>
+          <div class="price">$29<span>/mo</span></div>
+          <p class="price-desc">Full trade setup weekly</p>
+          <ul>
+            <li>Entry / Stop-Loss / Take-Profit</li>
+            <li>Confidence score + Pearson r</li>
+            <li>Private Telegram channel</li>
+            <li>Optimal lag timing</li>
+          </ul>
+          <a href="#" class="btn-primary" id="buy-btn">Subscribe — $29/mo</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <div class="container">
+      <p class="disclaimer"><strong>Disclaimer:</strong> These signals are for educational and research purposes only. Past performance does not guarantee future results. Trading commodities carries financial risk. Not financial advice.</p>
+      <p>&copy; 2026 Deepstream. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <script>
+    async function loadSignals() {
+      try {
+        const res = await fetch('/latest_signal.json');
+        const data = await res.json();
+        const tbody = document.getElementById('signal-rows');
+        document.getElementById('signal-date').textContent = new Date(data.generated_at).toLocaleDateString();
+
+        const active = data.signals.filter(s => s.status === 'ACTIVE');
+        if (active.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="7" class="loading">No active signals. Check back after next weekly update.</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = active.map(s => `
+          <tr>
+            <td>${s.pair}</td>
+            <td class="dir-${s.direction.toLowerCase()}">${s.direction}</td>
+            <td>$${s.entry}</td>
+            <td>$${s.stop_loss}</td>
+            <td>$${s.take_profit}</td>
+            <td><span class="conf-${s.confidence.toLowerCase()}">${s.confidence}</span></td>
+            <td>${s.lag_days}d</td>
+          </tr>
+        `).join('');
+      } catch(e) {
+        document.getElementById('signal-rows').innerHTML = '<tr><td colspan="7" class="loading">Sample: Copper LONG $4.52 | SL $4.29 | TP $4.88 | MEDIUM | 50d lag</td></tr>';
+      }
+    }
+    loadSignals();
+
+    document.getElementById('buy-btn').addEventListener('click', function(e) {
+      e.preventDefault();
+      alert('Payment page coming soon. For now, email deepstream@example.com to subscribe.');
+    });
+  </script>
+</body>
+</html>

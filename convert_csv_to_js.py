@@ -42,7 +42,7 @@ def main():
             print(f"Warning: {filename} not found in data directory.")
             
     # Write as a JavaScript variable file
-    js_content = f"// Project Neptune - Pre-cached Historical Datasets (2021-2026)\n"
+    js_content = f"// Deepstream - Pre-cached Historical Datasets (2021-2026)\n"
     js_content += f"const NEPTUNE_DATA_STORE = {json.dumps(js_data, indent=2)};\n"
     
     with open(OUTPUT_FILE, "w", encoding='utf-8') as f:

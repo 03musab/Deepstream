@@ -1,0 +1,50 @@
+{
+  "generated_at": "2026-07-30T20:26:23.571846",
+  "signals": [
+    {
+      "pair": "Pacific SST -> Copper",
+      "direction": "LONG",
+      "confidence": "LOW",
+      "pearson_r": -0.3489,
+      "lag_days": 56,
+      "entry": 6.36,
+      "stop_loss": 6.04,
+      "take_profit": 6.87,
+      "ocean_change": 0.0,
+      "price_change_30d_pct": 4.19,
+      "status": "ACTIVE"
+    },
+    {
+      "pair": "Atlantic Chlorophyll -> Tuna",
+      "direction": "LONG",
+      "confidence": "HIGH",
+      "pearson_r": -0.7754,
+      "lag_days": 30,
+      "entry": 12.84,
+      "stop_loss": 12.2,
+      "take_profit": 13.87,
+      "ocean_change": 0.0,
+      "price_change_30d_pct": 0.15,
+      "status": "ACTIVE"
+    },
+    {
+      "pair": "GoM Chemical Plume -> Crude Oil",
+      "direction": "SHORT",
+      "confidence": "NOISE",
+      "pearson_r": 0.0317,
+      "lag_days": 110,
+      "entry": 87.36,
+      "stop_loss": 91.73,
+      "take_profit": 80.37,
+      "ocean_change": 0.0,
+      "price_change_30d_pct": 4.19,
+      "status": "ACTIVE"
+    }
+  ],
+  "summary": {
+    "total": 3,
+    "active": 3,
+    "high_confidence": 1,
+    "medium_confidence": 0
+  }
+}

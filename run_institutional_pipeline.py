@@ -16,7 +16,7 @@ def run_script(script_name):
 
 def main():
     print("=========================================================")
-    print("      PROJECT NEPTUNE INSTITUTIONAL QUANT PIPELINE       ")
+    print("      DEEPSTREAM INSTITUTIONAL QUANT PIPELINE       ")
     print("=========================================================")
     
     start_time = datetime.now()

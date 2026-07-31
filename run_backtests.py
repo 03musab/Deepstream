@@ -263,7 +263,7 @@ def run_test_3():
 
 def main():
     print("=========================================================")
-    print("          PROJECT NEPTUNE BACKTEST ENGINE                ")
+    print("          DEEPSTREAM BACKTEST ENGINE                ")
     print("=========================================================")
     
     results = {}

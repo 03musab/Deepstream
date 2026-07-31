@@ -1,6 +1,6 @@
-# Project Neptune: Phase 0 & 1 Quantitative Master Report
+# Deepstream: Phase 0 & 1 Quantitative Master Report
 
-This is the definitive research, validation, and implementation report for **Project Neptune**. It compiles our plain-English concepts, 20-year historical backtesting data, institutional econometric proofs, event studies, and dashboard development into a single consolidated document.
+This is the definitive research, validation, and implementation report for **Deepstream**. It compiles our plain-English concepts, 20-year historical backtesting data, institutional econometric proofs, event studies, and dashboard development into a single consolidated document.
 
 ---
 
@@ -70,10 +70,10 @@ When the Pacific SST anomaly crossed the El Niño threshold, Copper futures pric
 We migrated a high-fidelity interactive dashboard into your project folder. The dashboard runs these dynamic lag-shifting and Pearson calculations directly in the browser over the full 20-year history.
 
 ### File Structure:
-*   [index.html](file:///C:/Users/musab/Desktop/Project%20Neptune/index.html) - Main operations console structure featuring the interactive world map, prediction charts, live telemetry logs, and the financial projection modeler.
-*   [styles.css](file:///C:/Users/musab/Desktop/Project%20Neptune/styles.css) - Premium obsidian-dark, glassmorphic styling sheets.
-*   [app.js](file:///C:/Users/musab/Desktop/Project%20Neptune/app.js) - Handles map clicks, updates coordinates, computes live Pearson correlations, and draws forecast price overlays.
-*   [data-store.js](file:///C:/Users/musab/Desktop/Project%20Neptune/data-store.js) - Browser-side cache containing the compiled **7,450+ daily entries** representing the 20-year historical dataset.
+*   [index.html](file:///C:/Users/musab/Desktop/Deepstream/index.html) - Main operations console structure featuring the interactive world map, prediction charts, live telemetry logs, and the financial projection modeler.
+*   [styles.css](file:///C:/Users/musab/Desktop/Deepstream/styles.css) - Premium obsidian-dark, glassmorphic styling sheets.
+*   [app.js](file:///C:/Users/musab/Desktop/Deepstream/app.js) - Handles map clicks, updates coordinates, computes live Pearson correlations, and draws forecast price overlays.
+*   [data-store.js](file:///C:/Users/musab/Desktop/Deepstream/data-store.js) - Browser-side cache containing the compiled **7,450+ daily entries** representing the 20-year historical dataset.
 
 ### Key Interactive Features:
 1.  **Lead Time Slider**: Users can drag the slider (0 to 90 days) to dynamically shift the ocean index line. The Pearson correlation $r$ and confidence scores recalculate live in the browser.

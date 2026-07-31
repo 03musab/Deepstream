@@ -181,7 +181,7 @@ def main():
         }
         
     # Generate Research Report
-    report = """# PROJECT NEPTUNE
+    report = """# DEEPSTREAM
 ## Institutional Quantitative Research Report
 **Classification**: CONFIDENTIAL // INVESTMENT COMMITTEE DIRECTIVE  
 **Date**: June 2026  
@@ -190,7 +190,7 @@ def main():
 
 ### Executive Summary
 
-This report delivers rigorous **econometric proof** verifying the predictive signals utilized by Project Neptune over a **20-year historical dataset** (2006 to 2026). Using standard institutional-grade statistical testing, we analyzed whether sub-ocean data indicators possess predictive causality over global commodity futures prices.
+This report delivers rigorous **econometric proof** verifying the predictive signals utilized by Deepstream over a **20-year historical dataset** (2006 to 2026). Using standard institutional-grade statistical testing, we analyzed whether sub-ocean data indicators possess predictive causality over global commodity futures prices.
 
 By running **Augmented Dickey-Fuller (ADF) Stationarity tests** and **Vector Autoregression (VAR) Granger Causality tests**, we verify that daily log returns are stationary and test if lagging ocean changes Granger-cause price returns.
 

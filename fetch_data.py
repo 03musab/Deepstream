@@ -177,7 +177,7 @@ def generate_simulated_data():
     print("Generated and saved all simulated datasets in the 'data' directory.")
 
 def main():
-    print("=== Neptune Data Fetching & Generation System ===")
+    print("=== Deepstream Data Fetching & Generation System ===")
     sst_df = fetch_noaa_sst()
     copper_df = fetch_yahoo_finance(COPPER_TICKER)
     oil_df = fetch_yahoo_finance(OIL_TICKER)

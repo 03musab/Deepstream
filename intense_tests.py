@@ -93,7 +93,7 @@ def run_event_study(df, comm_col, ocean_col, lag, threshold, direction="above"):
     return len(events), results
 
 def generate_report(test_results):
-    report = """# PROJECT NEPTUNE
+    report = """# DEEPSTREAM
 ## Phase 0: Intensive Quantitative Diagnostics Report
 **Document ID**: NP-P0-DIAG-01  
 **Classification**: CONFIDENTIAL // QUANT RESEARCH DESK  
@@ -128,7 +128,7 @@ To address the complexity of sub-ocean data mapping, this report presents **Inte
     report += """### Key Analytical Takeaways
 
 1. **Trend Bias & Returns**: The low returns correlation suggests that daily fluctuations in price are driven by market noise. However, the higher raw price correlation indicates that the *longer-term macroeconomic trends* align with ocean cycles.
-2. **Rolling Volatility**: The high standard deviation in the rolling correlation windows demonstrates that the signal fluctuates in strength. Neptune models must use a regime-switching parameter to turn off trading signals during periods of low correlation.
+2. **Rolling Volatility**: The high standard deviation in the rolling correlation windows demonstrates that the signal fluctuates in strength. Deepstream models must use a regime-switching parameter to turn off trading signals during periods of low correlation.
 3. **Event Studies**: Event studies show that forward returns are significantly higher following extreme ocean anomalies, validating that our best strategy is an **Event-Trigger Strategy** rather than a continuous daily forecast.
 """
     
@@ -138,7 +138,7 @@ To address the complexity of sub-ocean data mapping, this report presents **Inte
 
 def main():
     print("=========================================================")
-    print("      PROJECT NEPTUNE INTENSE DIAGNOSTIC RUN             ")
+    print("      DEEPSTREAM INTENSE DIAGNOSTIC RUN             ")
     print("=========================================================")
     
     test_results = {}

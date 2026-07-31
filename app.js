@@ -1,4 +1,4 @@
-// Project Neptune - Operations Dashboard Controller
+// Deepstream - Operations Dashboard Controller
 document.addEventListener("DOMContentLoaded", () => {
     // Initialise Lucide Icons
     lucide.createIcons();
@@ -352,7 +352,7 @@ document.addEventListener("DOMContentLoaded", () => {
             }
             
             initForecastChart(comVal);
-            addLogLine(`[SYS] Recalibrating Neptune-GPT neural weights for commodity index matching: ${comVal.toUpperCase()}`, "system");
+            addLogLine(`[SYS] Recalibrating Deepstream-GPT neural weights for commodity index matching: ${comVal.toUpperCase()}`, "system");
         });
     }
 
@@ -520,14 +520,14 @@ document.addEventListener("DOMContentLoaded", () => {
             `;
             mainContent.appendChild(grid);
         } else if (tabName === "sales") {
-            document.getElementById("page-title").textContent = "Project Neptune Pitch deck";
+            document.getElementById("page-title").textContent = "Deepstream Pitch deck";
             const grid = document.createElement("div");
             grid.id = "sales-dynamic";
             grid.className = "workspace-grid full-width-panel";
             grid.innerHTML = `
                 <div class="panel" style="grid-column: span 3; padding: 32px;">
                     <div style="text-align: center; margin-bottom: 40px;">
-                        <h2 style="font-family: var(--font-header); font-size: 28px; color: var(--color-cyan);">Project Neptune Pitch Summary</h2>
+                        <h2 style="font-family: var(--font-header); font-size: 28px; color: var(--color-cyan);">Deepstream Pitch Summary</h2>
                         <p style="color: var(--text-secondary); max-width: 600px; margin: 10px auto;">Deploying autonomous underwater drones (AUVs) to collect proprietary ocean data, predict global commodity prices, and sell price signals to high-paying client portfolios.</p>
                     </div>
                     
@@ -553,7 +553,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         <div class="deck-card">
                             <span class="card-badge">P3 - SCALE</span>
                             <h3 class="card-title">Terminal Release</h3>
-                            <p class="card-desc">Expand to 200 AUVs. Launch Neptune Terminal (the Bloomberg of Ocean Intel) at subscription tiers. Hit $50M ARR.</p>
+                            <p class="card-desc">Expand to 200 AUVs. Launch Deepstream Terminal (the Bloomberg of Ocean Intel) at subscription tiers. Hit $50M ARR.</p>
                         </div>
                         
                         <div class="deck-card">
@@ -766,7 +766,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 demoCallout.style.transform = "translateY(0)";
             }, 100);
             
-            updateDemoStep(1, 6, "Welcome to the Project Neptune Terminal Demonstration. We begin in Zone Alpha (Pacific ENSO) mapping Sea Surface Temperatures.", () => {
+            updateDemoStep(1, 6, "Welcome to the Deepstream Terminal Demonstration. We begin in Zone Alpha (Pacific ENSO) mapping Sea Surface Temperatures.", () => {
                 const alphaMarker = document.getElementById("zone-alpha");
                 if (alphaMarker) alphaMarker.dispatchEvent(new Event("click"));
                 
@@ -788,7 +788,7 @@ document.addEventListener("DOMContentLoaded", () => {
                                                     const auvSlider = document.getElementById("slide-auv");
                                                     animateSlider(auvSlider, 20, 180, 20, () => {
                                                         setTimeout(() => {
-                                                            updateDemoStep(6, 6, "Demo Complete. Project Neptune is fully validated, offering real-time forecasts and institutional-grade causality.", () => {
+                                                            updateDemoStep(6, 6, "Demo Complete. Deepstream is fully validated, offering real-time forecasts and institutional-grade causality.", () => {
                                                                 setTimeout(() => {
                                                                     const terminalTabBtn = document.querySelector('[data-tab="terminal"]');
                                                                     if (terminalTabBtn) terminalTabBtn.dispatchEvent(new Event("click"));
