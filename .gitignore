@@ -2,3 +2,6 @@ __pycache__/
 *.pyc
 .env
 deepstream.log
+data/subscriptions.json
+data/subscriptions.json.tmp
+.netlify/

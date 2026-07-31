@@ -338,9 +338,48 @@ async function init() {
   } catch (e) { console.error("Failed to load chart data:", e); }
 }
 
-$("buy-btn").addEventListener("click", (e) => {
-  e.preventDefault();
-  window.location.href = "https://example.com/subscribe";
-});
+/* ------------------------------------------------------------------ */
+/* Checkout (Paddle)                                                   */
+/* ------------------------------------------------------------------ */
+let paddleReady = false;
+
+async function initPaddle() {
+  try {
+    const res = await fetch("/api/paddle_config", { cache: "no-store" });
+    if (!res.ok) return;
+    const cfg = await res.json();
+    if (!cfg.configured) return;
+    Paddle.Environment.set(cfg.env);
+    Paddle.Initialize({
+      token: cfg.client_token,
+      eventCallback: (event) => {
+        if (event.name === "checkout.completed") {
+          const txn = event.data && event.data.transaction_id;
+          window.location.href = `success.html?transaction_id=${encodeURIComponent(txn)}`;
+        }
+      },
+    });
+    paddleReady = true;
+  } catch (e) { console.error("Failed to init Paddle checkout:", e); }
+}
+
+const buyBtn = $("buy-btn");
+if (buyBtn) {
+  buyBtn.addEventListener("click", async (e) => {
+    e.preventDefault();
+    if (!paddleReady) {
+      await initPaddle();
+      if (!paddleReady) {
+        buyBtn.textContent = "Checkout unavailable";
+        return;
+      }
+    }
+    const cfg = await (await fetch("/api/paddle_config", { cache: "no-store" })).json();
+    Paddle.Checkout.open({
+      items: [{ priceId: cfg.price_id, quantity: 1 }],
+      settings: { theme: "dark", locale: "en", displayMode: "overlay" },
+    });
+  });
+}
 
 init();

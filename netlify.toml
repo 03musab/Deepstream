@@ -1,0 +1,7 @@
+[build]
+publish = "signal_site"
+
+[[redirects]]
+from = "/#pricing"
+to = "/"
+status = 200

@@ -100,3 +100,23 @@ TRACK_LOOKBACK_DAYS = 365 * 5 # use the last 5 years of data for the record
 # ---------------------------------------------------------------------------
 TELEGRAM_TOKEN_ENV = "DEEPSTREAM_BOT_TOKEN"
 TELEGRAM_CHANNEL_ENV = "DEEPSTREAM_CHANNEL_ID"
+
+# Private Telegram channel reserved for Pro subscribers. The bot must be an
+# admin there so it can mint single-use invite links after a paid checkout.
+PRO_CHANNEL_ENV = "DEEPSTREAM_PRO_CHANNEL_ID"
+
+# ---------------------------------------------------------------------------
+# Payments (Paddle — merchant of record)
+# ---------------------------------------------------------------------------
+PADDLE_ENV_ENV = "PADDLE_ENV"                       # "sandbox" | "live"
+PADDLE_CLIENT_TOKEN_ENV = "PADDLE_CLIENT_TOKEN"     # safe to ship to the browser
+PADDLE_PRICE_ID_ENV = "PADDLE_PRICE_ID"             # Pro $29/mo recurring price
+PADDLE_WEBHOOK_SECRET_ENV = "PADDLE_WEBHOOK_SECRET" # per notification-destination secret
+
+# Paddle subscription state cache (lean cache of access decisions).
+SUBSCRIPTIONS_FILE = BASE_DIR / "data" / "subscriptions.json"
+
+# Server routes for the payment flow.
+PADDLE_WEBHOOK_PATH = "/webhooks/paddle"
+ACCESS_API_PATH = "/api/access"
+PADDLE_CONFIG_API_PATH = "/api/paddle_config"
