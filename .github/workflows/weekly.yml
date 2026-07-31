@@ -35,6 +35,10 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
+      - name: Run unit tests (gate)
+        run: |
+          python -m unittest discover -s tests
+
       - name: Generate signals + track record
         env:
           DEEPSTREAM_BOT_TOKEN: ${{ secrets.DEEPSTREAM_BOT_TOKEN }}
