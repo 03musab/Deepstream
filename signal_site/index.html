@@ -3,159 +3,269 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Deepstream — Ocean Data Predicts Commodity Prices</title>
+  <meta name="description" content="Deepstream converts oceanographic data into statistically validated commodity trade signals using walk-forward, out-of-sample methodology.">
+  <title>Deepstream — Ocean Data. Commodity Signals.</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-  <nav class="nav">
-    <div class="nav-inner">
-      <span class="logo">Deepstream</span>
-      <div class="nav-links">
+  <header class="site-header">
+    <div class="container header-inner">
+      <a class="brand" href="#">
+        <svg class="brand-mark" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M3 16.5c3.5-4 7-4 10.5 0s7 4 10.5 0" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+          <path d="M3 12c3.5-4 7-4 10.5 0s7 4 10.5 0" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" opacity="0.6"/>
+          <path d="M3 7.5c3.5-4 7-4 10.5 0s7 4 10.5 0" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" opacity="0.3"/>
+        </svg>
+        <span class="brand-name">Deepstream</span>
+      </a>
+      <nav class="nav">
         <a href="#signals">Signals</a>
+        <a href="#track-record">Track Record</a>
+        <a href="#methodology">Methodology</a>
         <a href="#pricing">Pricing</a>
-        <a href="#how">How It Works</a>
-      </div>
+      </nav>
+      <a class="btn btn-primary btn-sm" href="#pricing">Subscribe</a>
     </div>
-  </nav>
+  </header>
 
-  <section class="hero">
-    <div class="hero-bg"></div>
-    <div class="hero-content">
-      <h1>Ocean data predicts <span class="gradient-text">commodity prices</span> weeks in advance.</h1>
-      <p class="hero-sub">We track sea surface temperature, chlorophyll, and chemical plumes — and tell you which direction copper, tuna, and crude oil are heading next.</p>
-      <div class="hero-cta">
-        <a href="#pricing" class="btn-primary">Get Weekly Signals — $29/mo</a>
-        <a href="#signals" class="btn-secondary">View Latest Sample</a>
+  <main>
+
+    <section class="hero">
+      <div class="container hero-grid">
+        <div class="hero-copy">
+          <p class="eyebrow">QUANTITATIVE OCEAN INTELLIGENCE</p>
+          <h1>The ocean moves commodities.<br><span class="accent">We trade that signal.</span></h1>
+          <p class="hero-lede">
+            Deepstream monitors sea surface temperature, chlorophyll, and chemical plumes,
+            and converts those observations into directional commodity trade setups —
+            validated on 20 years of data using walk-forward, out-of-sample methodology.
+          </p>
+          <div class="hero-cta">
+            <a class="btn btn-primary" href="#pricing">View pricing</a>
+            <a class="btn btn-ghost" href="#track-record">See the track record</a>
+          </div>
+        </div>
+
+        <aside class="hero-terminal" aria-label="Latest signal snapshot">
+          <div class="terminal-head">
+            <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+            <span class="terminal-title">deepstream — latest snapshot</span>
+          </div>
+          <div class="terminal-body" id="terminal-body">
+            <p class="terminal-loading">Loading latest signals…</p>
+          </div>
+          <div class="terminal-foot">
+            <span class="status-dot" id="status-dot"></span>
+            <span id="status-text">Last updated —</span>
+          </div>
+        </aside>
       </div>
-    </div>
-  </section>
+      <div class="container trust-bar">
+        <div class="trust-item"><strong>20 yrs</strong><span>of historical data</span></div>
+        <div class="trust-item"><strong>walk-forward</strong><span>out-of-sample testing</span></div>
+        <div class="trust-item"><strong>3 markets</strong><span>copper · tuna · crude</span></div>
+        <div class="trust-item"><strong>5% / 8%</strong><span>risk / reward setup</span></div>
+      </div>
+    </section>
 
-  <section id="signals" class="section">
+    <section class="section" id="signals">
+      <div class="container">
+        <div class="section-head">
+          <p class="eyebrow">CURRENT POSITIONING</p>
+          <h2>This week's signals</h2>
+          <p class="section-sub">
+            Published every Monday. Each setup is generated only from data available
+            at publication time — no hindsight.
+          </p>
+        </div>
+        <div class="table-wrap">
+          <table class="data-table" id="signal-table">
+            <thead>
+              <tr>
+                <th>Pair</th>
+                <th>Position</th>
+                <th class="num">Entry</th>
+                <th class="num">Stop</th>
+                <th class="num">Target</th>
+                <th class="num">Correlation</th>
+                <th>Confidence</th>
+                <th class="num">Lead</th>
+              </tr>
+            </thead>
+            <tbody id="signal-rows">
+              <tr><td colspan="8" class="table-empty">Loading…</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="table-note" id="signal-date">Last updated —</p>
+      </div>
+    </section>
+
+    <section class="section section-alt" id="track-record">
+      <div class="container">
+        <div class="section-head">
+          <p class="eyebrow">HONEST PERFORMANCE</p>
+          <h2>Track record</h2>
+          <p class="section-sub">
+            Every trade below was generated as if live, using only the data that existed
+            at the time. Closed at the stop or target; otherwise marked to market at
+            60 days. No optimization against the future.
+          </p>
+        </div>
+
+        <div class="kpis" id="kpis">
+          <div class="kpi"><span class="kpi-label">Total trades</span><span class="kpi-value" id="kpi-total">—</span></div>
+          <div class="kpi"><span class="kpi-label">Win rate</span><span class="kpi-value" id="kpi-winrate">—</span></div>
+          <div class="kpi"><span class="kpi-label">Avg return / trade</span><span class="kpi-value" id="kpi-avg">—</span></div>
+          <div class="kpi"><span class="kpi-label">Risk / reward</span><span class="kpi-value" id="kpi-rr">1 : 1.6</span></div>
+        </div>
+
+        <div class="table-wrap">
+          <table class="data-table" id="track-table">
+            <thead>
+              <tr>
+                <th>Market</th>
+                <th class="num">Trades</th>
+                <th class="num">Wins</th>
+                <th class="num">Losses</th>
+                <th class="num">Win rate</th>
+                <th class="num">Avg return</th>
+              </tr>
+            </thead>
+            <tbody id="track-rows">
+              <tr><td colspan="6" class="table-empty">Loading…</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="table-note" id="track-note">
+          Simulated results for research and education. Not a guarantee of future returns.
+          No allowance for slippage, commissions, or financing costs.
+        </p>
+      </div>
+    </section>
+
+    <section class="section" id="methodology">
+      <div class="container">
+        <div class="section-head">
+          <p class="eyebrow">METHODOLOGY</p>
+          <h2>How the signal is produced</h2>
+        </div>
+        <div class="method-grid">
+          <article class="method-card">
+            <h3>1 · Observe</h3>
+            <p>
+              Daily readings from NOAA sea-surface temperature indices, satellite
+              chlorophyll concentration, and subsea chemical plume monitoring.
+            </p>
+          </article>
+          <article class="method-card">
+            <h3>2 · Measure</h3>
+            <p>
+              A grid-search optimizer sweeps smoothing windows and lead times to find
+              the lag at which each ocean variable most consistently precedes price.
+            </p>
+          </article>
+          <article class="method-card">
+            <h3>3 · Validate</h3>
+            <p>
+              Signals are tested with Dickey–Fuller stationarity and Granger causality
+              tests before any setup is published. Noise is never traded.
+            </p>
+          </article>
+          <article class="method-card">
+            <h3>4 · Replay</h3>
+            <p>
+              The engine is replayed out-of-sample over the prior five years to build an
+              honest track record — the same output a subscriber would have received.
+            </p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section-alt" id="pricing">
+      <div class="container">
+        <div class="section-head">
+          <p class="eyebrow">SUBSCRIPTIONS</p>
+          <h2>Pricing</h2>
+        </div>
+        <div class="pricing">
+          <div class="pricing-card">
+            <h3>Free</h3>
+            <p class="price">$0</p>
+            <p class="price-period">forever</p>
+            <ul>
+              <li>Weekly position summary</li>
+              <li>Public Telegram channel</li>
+              <li>Correlation &amp; confidence grades</li>
+            </ul>
+            <a class="btn btn-ghost" href="https://t.me/deepstream">Join the channel</a>
+          </div>
+          <div class="pricing-card featured">
+            <span class="ribbon">Recommended</span>
+            <h3>Pro</h3>
+            <p class="price">$29<span class="price-sub">/mo</span></p>
+            <p class="price-period">cancel anytime</p>
+            <ul>
+              <li>Full setups: entry · stop · target</li>
+              <li>Private Telegram channel</li>
+              <li>Confidence grades &amp; lead times</li>
+              <li>Full walk-forward track record</li>
+            </ul>
+            <a class="btn btn-primary" id="buy-btn" href="#">Subscribe</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="site-footer">
     <div class="container">
-      <h2>Latest Signal Snapshot</h2>
-      <p class="section-sub">Updated weekly. Powered by 20 years of backtested ocean-to-market correlations.</p>
-      <div class="signal-table-wrapper">
-        <table class="signal-table">
-          <thead>
-            <tr>
-              <th>Pair</th>
-              <th>Direction</th>
-              <th>Entry</th>
-              <th>Stop Loss</th>
-              <th>Take Profit</th>
-              <th>Confidence</th>
-              <th>Lag</th>
-            </tr>
-          </thead>
-          <tbody id="signal-rows">
-            <tr><td colspan="7" class="loading">Loading latest signals...</td></tr>
-          </tbody>
-        </table>
-      </div>
-      <p class="signal-note">Last updated: <span id="signal-date">--</span></p>
-    </div>
-  </section>
-
-  <section id="how" class="section alt">
-    <div class="container">
-      <h2>How It Works</h2>
-      <div class="steps">
-        <div class="step">
-          <div class="step-num">1</div>
-          <h3>Ocean Sensors</h3>
-          <p>NOAA satellites, ARGO floats, and AUVs measure SST, chlorophyll, and chemical data daily.</p>
+      <div class="footer-grid">
+        <div>
+          <div class="brand footer-brand">
+            <svg class="brand-mark" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M3 16.5c3.5-4 7-4 10.5 0s7 4 10.5 0" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+              <path d="M3 12c3.5-4 7-4 10.5 0s7 4 10.5 0" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" opacity="0.6"/>
+              <path d="M3 7.5c3.5-4 7-4 10.5 0s7 4 10.5 0" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" opacity="0.3"/>
+            </svg>
+            <span>Deepstream</span>
+          </div>
+          <p class="footer-tagline">Oceanographic data, translated into commodity signals.</p>
         </div>
-        <div class="step">
-          <div class="step-num">2</div>
-          <h3>Quant Engine</h3>
-          <p>Our grid-search optimizer finds the optimal lag + smoothing to maximize predictive correlation.</p>
+        <div class="footer-col">
+          <h4>Platform</h4>
+          <a href="#signals">Signals</a>
+          <a href="#track-record">Track record</a>
+          <a href="#methodology">Methodology</a>
         </div>
-        <div class="step">
-          <div class="step-num">3</div>
-          <h3>Signal Delivered</h3>
-          <p>Every Monday, you get entry price, stop-loss, take-profit, and confidence score via Telegram.</p>
+        <div class="footer-col">
+          <h4>Legal</h4>
+          <a href="#">Terms of use</a>
+          <a href="#">Privacy policy</a>
+          <a href="#">Risk disclosure</a>
         </div>
       </div>
-    </div>
-  </section>
-
-  <section id="pricing" class="section">
-    <div class="container">
-      <h2>Simple Pricing</h2>
-      <div class="pricing-cards">
-        <div class="card">
-          <h3>Free</h3>
-          <div class="price">$0</div>
-          <p class="price-desc">Weekly direction summary</p>
-          <ul>
-            <li>Direction only (LONG/SHORT)</li>
-            <li>Public Telegram channel</li>
-            <li>Weekly updates</li>
-          </ul>
-          <a href="https://t.me/deepstream" class="btn-secondary">Join Free</a>
-        </div>
-        <div class="card featured">
-          <div class="badge">Best Value</div>
-          <h3>Pro</h3>
-          <div class="price">$29<span>/mo</span></div>
-          <p class="price-desc">Full trade setup weekly</p>
-          <ul>
-            <li>Entry / Stop-Loss / Take-Profit</li>
-            <li>Confidence score + Pearson r</li>
-            <li>Private Telegram channel</li>
-            <li>Optimal lag timing</li>
-          </ul>
-          <a href="#" class="btn-primary" id="buy-btn">Subscribe — $29/mo</a>
-        </div>
+      <div class="disclaimer">
+        <p>
+          <strong>Risk disclosure.</strong> Deepstream is a quantitative research service.
+          Signals are provided for informational and educational purposes only and do not
+          constitute investment advice. Commodity trading involves substantial risk of loss
+          and is not suitable for every investor. Past performance, including the walk-forward
+          track record shown here, is simulated and does not guarantee future results.
+          Simulated results do not reflect actual execution, slippage, commissions, or
+          financing costs. You are solely responsible for your own trading decisions.
+        </p>
+        <p class="copy">&copy; 2026 Deepstream. All rights reserved.</p>
       </div>
-    </div>
-  </section>
-
-  <footer class="footer">
-    <div class="container">
-      <p class="disclaimer"><strong>Disclaimer:</strong> These signals are for educational and research purposes only. Past performance does not guarantee future results. Trading commodities carries financial risk. Not financial advice.</p>
-      <p>&copy; 2026 Deepstream. All rights reserved.</p>
     </div>
   </footer>
 
-  <script>
-    async function loadSignals() {
-      try {
-        const res = await fetch('/latest_signal.json');
-        const data = await res.json();
-        const tbody = document.getElementById('signal-rows');
-        document.getElementById('signal-date').textContent = new Date(data.generated_at).toLocaleDateString();
-
-        const active = data.signals.filter(s => s.status === 'ACTIVE');
-        if (active.length === 0) {
-          tbody.innerHTML = '<tr><td colspan="7" class="loading">No active signals. Check back after next weekly update.</td></tr>';
-          return;
-        }
-
-        tbody.innerHTML = active.map(s => `
-          <tr>
-            <td>${s.pair}</td>
-            <td class="dir-${s.direction.toLowerCase()}">${s.direction}</td>
-            <td>$${s.entry}</td>
-            <td>$${s.stop_loss}</td>
-            <td>$${s.take_profit}</td>
-            <td><span class="conf-${s.confidence.toLowerCase()}">${s.confidence}</span></td>
-            <td>${s.lag_days}d</td>
-          </tr>
-        `).join('');
-      } catch(e) {
-        document.getElementById('signal-rows').innerHTML = '<tr><td colspan="7" class="loading">Sample: Copper LONG $4.52 | SL $4.29 | TP $4.88 | MEDIUM | 50d lag</td></tr>';
-      }
-    }
-    loadSignals();
-
-    document.getElementById('buy-btn').addEventListener('click', function(e) {
-      e.preventDefault();
-      alert('Payment page coming soon. For now, email deepstream@example.com to subscribe.');
-    });
-  </script>
+  <script src="app.js"></script>
 </body>
 </html>

@@ -1,21 +1,24 @@
 {
-  "generated_at": "2026-07-31T09:59:41.338232",
+  "generated_at": "2026-07-31T10:05:13.721385",
   "signals": [
     {
-      "pair": "Pacific SST -> Copper",
-      "direction": "SHORT",
+      "pair_id": 1,
+      "pair": "ENSO \u2014 Pacific Sea Surface Temperature \u2192 Copper Futures",
+      "direction": "NONE",
       "confidence": "LOW",
       "pearson_r": -0.3489,
       "lag_days": 56,
-      "entry": 6.36,
-      "stop_loss": 6.68,
-      "take_profit": 5.85,
-      "ocean_change": 0.61,
-      "price_change_30d_pct": 4.19,
-      "status": "ACTIVE"
+      "entry": null,
+      "stop_loss": null,
+      "take_profit": null,
+      "ocean_change": null,
+      "price_change_pct": null,
+      "status": "NO_TRADE",
+      "generated_at": "2026-07-31T10:05:13.657634"
     },
     {
-      "pair": "Atlantic Chlorophyll -> Tuna",
+      "pair_id": 2,
+      "pair": "Atlantic Chlorophyll \u2192 Tuna Price",
       "direction": "SHORT",
       "confidence": "HIGH",
       "pearson_r": -0.7754,
@@ -24,21 +27,29 @@
       "stop_loss": 13.48,
       "take_profit": 11.81,
       "ocean_change": 0.0287,
-      "price_change_30d_pct": 0.15,
-      "status": "ACTIVE"
+      "price_change_pct": -2.31,
+      "status": "ACTIVE",
+      "generated_at": "2026-07-31T10:05:13.691177"
     },
     {
-      "pair": "GoM Chemical Plume -> Crude Oil",
+      "pair_id": 3,
+      "pair": "Gulf of Mexico Chemical Plume \u2192 Crude Oil Futures",
       "direction": "NONE",
       "confidence": "NOISE",
       "pearson_r": 0.0317,
       "lag_days": 110,
-      "status": "NO_TRADE"
+      "entry": null,
+      "stop_loss": null,
+      "take_profit": null,
+      "ocean_change": null,
+      "price_change_pct": null,
+      "status": "NO_TRADE",
+      "generated_at": "2026-07-31T10:05:13.721349"
     }
   ],
   "summary": {
     "total": 3,
-    "active": 2,
+    "active": 1,
     "high_confidence": 1,
     "medium_confidence": 0
   }
