@@ -7,6 +7,7 @@ import json
 from pathlib import Path
 
 from deepstream import config
+from deepstream.chart_data import build_chart_data
 from deepstream.logging_setup import setup_logging
 
 logger = setup_logging()
@@ -25,6 +26,9 @@ class DeepstreamHandler(http.server.SimpleHTTPRequestHandler):
         if self.path == "/track_record.json":
             self._serve_json(config.SITE_TRACK_FILE)
             return
+        if self.path == "/chart_data.json":
+            self._serve_json_obj(build_chart_data())
+            return
         super().do_GET()
 
     def _serve_json(self, path: Path):
@@ -34,6 +38,9 @@ class DeepstreamHandler(http.server.SimpleHTTPRequestHandler):
             self.wfile.write(b'{"error": "not found"}')
             return
         payload = json.loads(path.read_text())
+        self._serve_json_obj(payload)
+
+    def _serve_json_obj(self, payload: dict):
         body = json.dumps(payload).encode()
         self.send_response(200)
         self.send_header("Content-Type", "application/json")

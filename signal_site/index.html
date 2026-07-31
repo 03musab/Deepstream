@@ -3,57 +3,65 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Deepstream converts oceanographic data into statistically validated commodity trade signals using walk-forward, out-of-sample methodology.">
-  <title>Deepstream — Ocean Data. Commodity Signals.</title>
+  <meta name="description" content="Deepstream converts oceanographic data into statistically validated commodity trade signals using walk-forward, out-of-sample methodology. Copper, tuna, and crude oil.">
+  <title>Deepstream — The Ocean Pricer</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
   <header class="site-header">
     <div class="container header-inner">
-      <a class="brand" href="#">
+      <a class="brand" href="#top">
         <svg class="brand-mark" viewBox="0 0 24 24" fill="none" aria-hidden="true">
           <path d="M3 16.5c3.5-4 7-4 10.5 0s7 4 10.5 0" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
-          <path d="M3 12c3.5-4 7-4 10.5 0s7 4 10.5 0" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" opacity="0.6"/>
-          <path d="M3 7.5c3.5-4 7-4 10.5 0s7 4 10.5 0" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" opacity="0.3"/>
+          <path d="M3 12c3.5-4 7-4 10.5 0s7 4 10.5 0" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" opacity="0.55"/>
+          <path d="M3 7.5c3.5-4 7-4 10.5 0s7 4 10.5 0" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" opacity="0.25"/>
         </svg>
         <span class="brand-name">Deepstream</span>
       </a>
       <nav class="nav">
         <a href="#signals">Signals</a>
-        <a href="#track-record">Track Record</a>
+        <a href="#chart">Live Data</a>
+        <a href="#performance">Performance</a>
         <a href="#methodology">Methodology</a>
+        <a href="#compare">Why Deepstream</a>
         <a href="#pricing">Pricing</a>
       </nav>
       <a class="btn btn-primary btn-sm" href="#pricing">Subscribe</a>
     </div>
   </header>
 
-  <main>
+  <main id="top">
 
+    <!-- ============================= HERO ============================= -->
     <section class="hero">
       <div class="container hero-grid">
         <div class="hero-copy">
           <p class="eyebrow">QUANTITATIVE OCEAN INTELLIGENCE</p>
           <h1>The ocean moves commodities.<br><span class="accent">We trade that signal.</span></h1>
           <p class="hero-lede">
-            Deepstream monitors sea surface temperature, chlorophyll, and chemical plumes,
-            and converts those observations into directional commodity trade setups —
-            validated on 20 years of data using walk-forward, out-of-sample methodology.
+            El Niño warms the Pacific. Chlorophyll collapses in the Atlantic.
+            Seeps leak in the Gulf. Deepstream turns these physical events into
+            directional commodity setups — before the market prices them in.
           </p>
           <div class="hero-cta">
-            <a class="btn btn-primary" href="#pricing">View pricing</a>
-            <a class="btn btn-ghost" href="#track-record">See the track record</a>
+            <a class="btn btn-primary" href="#pricing">Start trading the ocean</a>
+            <a class="btn btn-ghost" href="#signals">See this week's signals</a>
           </div>
+          <ul class="hero-points">
+            <li>20 years of NOAA &amp; satellite data</li>
+            <li>Walk-forward, out-of-sample validation</li>
+            <li>Only statistically-tradeable signals</li>
+          </ul>
         </div>
 
         <aside class="hero-terminal" aria-label="Latest signal snapshot">
           <div class="terminal-head">
             <span class="dot"></span><span class="dot"></span><span class="dot"></span>
-            <span class="terminal-title">deepstream — latest snapshot</span>
+            <span class="terminal-title">deepstream — live snapshot</span>
           </div>
           <div class="terminal-body" id="terminal-body">
             <p class="terminal-loading">Loading latest signals…</p>
@@ -64,40 +72,44 @@
           </div>
         </aside>
       </div>
+
       <div class="container trust-bar">
         <div class="trust-item"><strong>20 yrs</strong><span>of historical data</span></div>
-        <div class="trust-item"><strong>walk-forward</strong><span>out-of-sample testing</span></div>
+        <div class="trust-item"><strong>5 / 8%</strong><span>risk / reward setup</span></div>
         <div class="trust-item"><strong>3 markets</strong><span>copper · tuna · crude</span></div>
-        <div class="trust-item"><strong>5% / 8%</strong><span>risk / reward setup</span></div>
+        <div class="trust-item"><strong>out-of-sample</strong><span>no lookahead bias</span></div>
       </div>
     </section>
 
+    <!-- ============================= SIGNALS ============================= -->
     <section class="section" id="signals">
       <div class="container">
         <div class="section-head">
           <p class="eyebrow">CURRENT POSITIONING</p>
-          <h2>This week's signals</h2>
+          <h2>This week's setups</h2>
           <p class="section-sub">
             Published every Monday. Each setup is generated only from data available
-            at publication time — no hindsight.
+            at publication time — no hindsight, no curve-fitting.
           </p>
         </div>
+
         <div class="table-wrap">
           <table class="data-table" id="signal-table">
             <thead>
               <tr>
-                <th>Pair</th>
+                <th>Signal</th>
                 <th>Position</th>
                 <th class="num">Entry</th>
                 <th class="num">Stop</th>
                 <th class="num">Target</th>
+                <th class="num">R:R</th>
                 <th class="num">Correlation</th>
                 <th>Confidence</th>
                 <th class="num">Lead</th>
               </tr>
             </thead>
             <tbody id="signal-rows">
-              <tr><td colspan="8" class="table-empty">Loading…</td></tr>
+              <tr><td colspan="9" class="table-empty">Loading…</td></tr>
             </tbody>
           </table>
         </div>
@@ -105,14 +117,61 @@
       </div>
     </section>
 
-    <section class="section section-alt" id="track-record">
+    <!-- ============================= CHART ============================= -->
+    <section class="section section-alt" id="chart">
+      <div class="container">
+        <div class="section-head split-head">
+          <div>
+            <p class="eyebrow">LIVE DATA</p>
+            <h2>Watch the signal build</h2>
+            <p class="section-sub">
+              The ocean indicator on the left axis, price on the right. When the
+              two diverge at the signal's lead time, a setup fires.
+            </p>
+          </div>
+          <div class="chart-picker" id="chart-picker" role="tablist" aria-label="Choose market">
+            <button class="chip active" data-pair="1">Copper / ENSO</button>
+            <button class="chip" data-pair="2">Tuna / Chlorophyll</button>
+            <button class="chip" data-pair="3">Crude / Plume</button>
+          </div>
+        </div>
+
+        <div class="chart-card">
+          <div class="chart-card-head">
+            <span class="chart-title" id="chart-title">ENSO — Pacific Sea Surface Temperature → Copper Futures</span>
+            <span class="chart-badge" id="chart-lag">lead —</span>
+          </div>
+          <canvas id="pairChart" height="120" aria-label="Ocean indicator versus price"></canvas>
+        </div>
+
+        <div class="section-head split-head equity-head">
+          <div>
+            <p class="eyebrow">CUMULATIVE EQUITY</p>
+            <h2>Walk-forward performance curve</h2>
+            <p class="section-sub">
+              Cumulative return across every replayable signal since 2021.
+            </p>
+          </div>
+          <div class="equity-kpi">
+            <span class="equity-kpi-label">Total return</span>
+            <span class="equity-kpi-value" id="equity-total">—</span>
+          </div>
+        </div>
+        <div class="chart-card">
+          <canvas id="equityChart" height="110" aria-label="Cumulative equity curve"></canvas>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================= PERFORMANCE ============================= -->
+    <section class="section" id="performance">
       <div class="container">
         <div class="section-head">
           <p class="eyebrow">HONEST PERFORMANCE</p>
           <h2>Track record</h2>
           <p class="section-sub">
-            Every trade below was generated as if live, using only the data that existed
-            at the time. Closed at the stop or target; otherwise marked to market at
+            Every trade below was generated as if live, using only data available
+            at the time. Closed at stop or target; otherwise marked to market at
             60 days. No optimization against the future.
           </p>
         </div>
@@ -121,7 +180,7 @@
           <div class="kpi"><span class="kpi-label">Total trades</span><span class="kpi-value" id="kpi-total">—</span></div>
           <div class="kpi"><span class="kpi-label">Win rate</span><span class="kpi-value" id="kpi-winrate">—</span></div>
           <div class="kpi"><span class="kpi-label">Avg return / trade</span><span class="kpi-value" id="kpi-avg">—</span></div>
-          <div class="kpi"><span class="kpi-label">Risk / reward</span><span class="kpi-value" id="kpi-rr">1 : 1.6</span></div>
+          <div class="kpi"><span class="kpi-label">Avg win / loss</span><span class="kpi-value" id="kpi-wl">—</span></div>
         </div>
 
         <div class="table-wrap">
@@ -141,6 +200,12 @@
             </tbody>
           </table>
         </div>
+
+        <div class="recent-trades">
+          <h3>Recent outcomes</h3>
+          <div class="recent-grid" id="recent-trades"></div>
+        </div>
+
         <p class="table-note" id="track-note">
           Simulated results for research and education. Not a guarantee of future returns.
           No allowance for slippage, commissions, or financing costs.
@@ -148,50 +213,87 @@
       </div>
     </section>
 
-    <section class="section" id="methodology">
+    <!-- ============================= METHODOLOGY ============================= -->
+    <section class="section section-alt" id="methodology">
       <div class="container">
         <div class="section-head">
           <p class="eyebrow">METHODOLOGY</p>
-          <h2>How the signal is produced</h2>
+          <h2>How a signal is produced</h2>
         </div>
         <div class="method-grid">
           <article class="method-card">
-            <h3>1 · Observe</h3>
+            <div class="method-num">01</div>
+            <h3>Observe</h3>
             <p>
-              Daily readings from NOAA sea-surface temperature indices, satellite
-              chlorophyll concentration, and subsea chemical plume monitoring.
+              Daily NOAA sea-surface temperature indices, satellite chlorophyll
+              concentration, and subsea chemical plume monitoring.
             </p>
           </article>
           <article class="method-card">
-            <h3>2 · Measure</h3>
+            <div class="method-num">02</div>
+            <h3>Measure</h3>
             <p>
-              A grid-search optimizer sweeps smoothing windows and lead times to find
-              the lag at which each ocean variable most consistently precedes price.
+              A grid-search optimizer sweeps smoothing windows and lead times to
+              find the lag at which each ocean variable most consistently
+              precedes price.
             </p>
           </article>
           <article class="method-card">
-            <h3>3 · Validate</h3>
+            <div class="method-num">03</div>
+            <h3>Validate</h3>
             <p>
-              Signals are tested with Dickey–Fuller stationarity and Granger causality
-              tests before any setup is published. Noise is never traded.
+              Dickey–Fuller stationarity and Granger causality tests run before
+              any setup is published. Weak or noisy relationships are never traded.
             </p>
           </article>
           <article class="method-card">
-            <h3>4 · Replay</h3>
+            <div class="method-num">04</div>
+            <h3>Replay</h3>
             <p>
-              The engine is replayed out-of-sample over the prior five years to build an
-              honest track record — the same output a subscriber would have received.
+              The engine is replayed out-of-sample over the prior five years to
+              build an honest track record — the same output a subscriber receives.
             </p>
           </article>
         </div>
       </div>
     </section>
 
+    <!-- ============================= COMPARE ============================= -->
+    <section class="section" id="compare">
+      <div class="container">
+        <div class="section-head">
+          <p class="eyebrow">WHY DEEPSTREAM</p>
+          <h2>Signal providers promise alpha.<br>We show our homework.</h2>
+        </div>
+        <div class="compare-table-wrap">
+          <table class="compare-table">
+            <thead>
+              <tr>
+                <th></th>
+                <th class="cmp-mine">Deepstream</th>
+                <th>Typical signal service</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td>Validation</td><td class="cmp-mine good">Out-of-sample walk-forward</td><td class="bad">Cherry-picked backtest</td></tr>
+              <tr><td>Data discipline</td><td class="cmp-mine good">Only data available at signal date</td><td class="bad">Full-history hindsight</td></tr>
+              <tr><td>Noise handling</td><td class="cmp-mine good">LOW / NOISE never traded</td><td class="bad">Signals published regardless</td></tr>
+              <tr><td>Track record</td><td class="cmp-mine good">Published, trade-by-trade</td><td class="bad">Selective screenshots</td></tr>
+              <tr><td>Stop / target</td><td class="cmp-mine good">Fixed 5% / 8% risk architecture</td><td class="bad">Ad-hoc, undisclosed</td></tr>
+              <tr><td>Econometric proof</td><td class="cmp-mine good">Granger causality tested</td><td class="bad">None shown</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================= PRICING ============================= -->
     <section class="section section-alt" id="pricing">
       <div class="container">
         <div class="section-head">
           <p class="eyebrow">SUBSCRIPTIONS</p>
           <h2>Pricing</h2>
+          <p class="section-sub">Cancel anytime. No lock-in, no hidden fees.</p>
         </div>
         <div class="pricing">
           <div class="pricing-card">
@@ -200,24 +302,78 @@
             <p class="price-period">forever</p>
             <ul>
               <li>Weekly position summary</li>
-              <li>Public Telegram channel</li>
               <li>Correlation &amp; confidence grades</li>
+              <li>Public Telegram channel</li>
             </ul>
             <a class="btn btn-ghost" href="https://t.me/deepstream">Join the channel</a>
           </div>
           <div class="pricing-card featured">
-            <span class="ribbon">Recommended</span>
+            <span class="ribbon">Most popular</span>
             <h3>Pro</h3>
             <p class="price">$29<span class="price-sub">/mo</span></p>
             <p class="price-period">cancel anytime</p>
             <ul>
               <li>Full setups: entry · stop · target</li>
-              <li>Private Telegram channel</li>
               <li>Confidence grades &amp; lead times</li>
+              <li>Private Telegram channel</li>
               <li>Full walk-forward track record</li>
+              <li>Methodology &amp; parameter updates</li>
             </ul>
             <a class="btn btn-primary" id="buy-btn" href="#">Subscribe</a>
           </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================= FAQ ============================= -->
+    <section class="section" id="faq">
+      <div class="container">
+        <div class="section-head">
+          <p class="eyebrow">FAQ</p>
+          <h2>Common questions</h2>
+        </div>
+        <div class="faq-list">
+          <details class="faq-item" open>
+            <summary>Is this financial advice?</summary>
+            <p>
+              No. Deepstream is a quantitative research service. Signals are
+              informational and educational. You are solely responsible for your
+              own trading decisions.
+            </p>
+          </details>
+          <details class="faq-item">
+            <summary>Why would the ocean predict commodities?</summary>
+            <p>
+              Physical systems precede markets. El Niño alters rainfall around
+              South American copper mines; chlorophyll collapses signal nutrient
+              disruption that constrains tuna catch; subsea plumes flag energy
+              infrastructure stress. Markets price these events in after physical
+              data — Deepstream aims to lead.
+            </p>
+          </details>
+          <details class="faq-item">
+            <summary>How is the track record computed?</summary>
+            <p>
+              Walk-forward replay. For each historical signal date we use only the
+              data available up to that date, generate the exact setup a
+              subscriber would receive, then follow the trade forward until the
+              stop or target is hit, or 60 days pass.
+            </p>
+          </details>
+          <details class="faq-item">
+            <summary>What if there are no high-confidence signals?</summary>
+            <p>
+              We say so. Standing aside is a position. Deepstream never fabricates
+              a setup to justify a subscription.
+            </p>
+          </details>
+          <details class="faq-item">
+            <summary>How do I receive the signals?</summary>
+            <p>
+              Via a private Telegram channel. Free subscribers get the weekly
+              summary on the public channel.
+            </p>
+          </details>
         </div>
       </div>
     </section>
@@ -231,8 +387,8 @@
           <div class="brand footer-brand">
             <svg class="brand-mark" viewBox="0 0 24 24" fill="none" aria-hidden="true">
               <path d="M3 16.5c3.5-4 7-4 10.5 0s7 4 10.5 0" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
-              <path d="M3 12c3.5-4 7-4 10.5 0s7 4 10.5 0" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" opacity="0.6"/>
-              <path d="M3 7.5c3.5-4 7-4 10.5 0s7 4 10.5 0" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" opacity="0.3"/>
+              <path d="M3 12c3.5-4 7-4 10.5 0s7 4 10.5 0" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" opacity="0.55"/>
+              <path d="M3 7.5c3.5-4 7-4 10.5 0s7 4 10.5 0" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" opacity="0.25"/>
             </svg>
             <span>Deepstream</span>
           </div>
@@ -241,14 +397,15 @@
         <div class="footer-col">
           <h4>Platform</h4>
           <a href="#signals">Signals</a>
-          <a href="#track-record">Track record</a>
+          <a href="#chart">Live data</a>
+          <a href="#performance">Performance</a>
           <a href="#methodology">Methodology</a>
         </div>
         <div class="footer-col">
-          <h4>Legal</h4>
+          <h4>Company</h4>
+          <a href="mailto:hello@deepstream.example">Contact</a>
           <a href="#">Terms of use</a>
           <a href="#">Privacy policy</a>
-          <a href="#">Risk disclosure</a>
         </div>
       </div>
       <div class="disclaimer">
@@ -266,6 +423,7 @@
     </div>
   </footer>
 
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
