@@ -27,11 +27,21 @@ if [ "$EXTRA_ARGS" = "--skip-pipeline" ]; then
     EXTRA_ARGS="--skip-pipeline"
 fi
 
+# Pick a working Python interpreter (Windows Git Bash: `python`; POSIX: `python3`).
+if command -v python >/dev/null 2>&1; then
+    PYTHON_BIN=python
+elif command -v python3 >/dev/null 2>&1; then
+    PYTHON_BIN=python3
+else
+    echo "No Python interpreter found (tried 'python' and 'python3')" >&2
+    exit 1
+fi
+
 echo "=== Deepstream weekly run: $(date -u +%Y-%m-%dT%H:%M:%SZ) ==="
 
-python3 -m deepstream run $EXTRA_ARGS
+"$PYTHON_BIN" -m deepstream run $EXTRA_ARGS
 
 # Deliver to Telegram (no-op if credentials are unset).
-python3 -m deepstream.telegram
+"$PYTHON_BIN" -m deepstream.telegram
 
 echo "=== Deepstream weekly run complete ==="

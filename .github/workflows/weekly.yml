@@ -1,0 +1,68 @@
+name: Weekly Signal Delivery
+
+on:
+  schedule:
+    - cron: "0 5 * * 1"   # every Monday 05:00 UTC — change to suit your release day
+  workflow_dispatch:       # also triggerable manually from the Actions tab
+    inputs:
+      skip_pipeline:
+        description: "Use existing data instead of re-fetching (faster, offline-safe)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write   # allows pushing the refreshed signal assets back to the repo
+
+# Prevent a manual run from overlapping the Monday cron (both would push).
+concurrency:
+  group: weekly-delivery
+  cancel-in-progress: false
+
+jobs:
+  weekly:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Generate signals + track record
+        env:
+          DEEPSTREAM_BOT_TOKEN: ${{ secrets.DEEPSTREAM_BOT_TOKEN }}
+          DEEPSTREAM_CHANNEL_ID: ${{ secrets.DEEPSTREAM_CHANNEL_ID }}
+          DEEPSTREAM_PRO_CHANNEL_ID: ${{ secrets.DEEPSTREAM_PRO_CHANNEL_ID }}
+        run: |
+          if [ "${{ inputs.skip_pipeline }}" = "true" ]; then
+            python -m deepstream run --skip-pipeline
+          else
+            python -m deepstream run
+          fi
+
+      - name: Deliver weekly report to Telegram
+        env:
+          DEEPSTREAM_BOT_TOKEN: ${{ secrets.DEEPSTREAM_BOT_TOKEN }}
+          DEEPSTREAM_CHANNEL_ID: ${{ secrets.DEEPSTREAM_CHANNEL_ID }}
+          DEEPSTREAM_PRO_CHANNEL_ID: ${{ secrets.DEEPSTREAM_PRO_CHANNEL_ID }}
+        run: python -m deepstream.telegram
+
+      - name: Push refreshed assets back to the repo
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add latest_signal.json track_record.json optimized_parameters.json data/ signal_site/latest_signal.json signal_site/track_record.json
+          if git diff --cached --quiet; then
+            echo "No asset changes to commit."
+          else
+            git commit -m "chore: weekly signal refresh $(date -u +%Y-%m-%d)"
+            git push
+            echo "Pushed refreshed signal assets (Netlify will redeploy the site)."
+          fi
