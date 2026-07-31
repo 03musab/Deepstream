@@ -11,8 +11,19 @@ transparently on the landing site.
 ## Revenue Model
 | Tier   | Price    | Delivery             | Content |
 |--------|----------|----------------------|---------|
-| Free   | $0       | Public TG channel    | Weekly position summary + confidence grades |
+| Free   | $0       | Public TG channel    | Weekly position summary + confidence grades (no levels) |
 | Pro    | $29/mo   | Private TG channel   | Entry / Stop / Target + full track record |
+
+### Delivery split (implemented)
+`deepstream.telegram` sends two messages each week:
+- **Public channel** (`DEEPSTREAM_CHANNEL_ID`) — `format_signal_summary`:
+  direction + confidence grades only. Entry/stop/target are never included,
+  so free subscribers see the signal exists but not the setup.
+- **Private Pro channel** (`DEEPSTREAM_PRO_CHANNEL_ID`) — `format_signal_report`:
+  full setups with entry / stop / target.
+
+Either channel may be unset; delivery to a configured channel still succeeds.
+Pro access itself is still gated by the paid invite-link flow (Cashfree).
 
 ## Architecture
 ```

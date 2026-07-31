@@ -47,8 +47,8 @@ from deepstream.logging_setup import setup_logging
 
 logger = setup_logging()
 
-CASHFREE_API_BASE_SANDBOX = "https://sandbox.cashfree.com/pg"
-CASHFREE_API_BASE_PRODUCTION = "https://api.cashfree.com/pg"
+CASHFREE_API_BASE_SANDBOX = "https://sandbox.cashfree.com"
+CASHFREE_API_BASE_PRODUCTION = "https://api.cashfree.com"
 DEFAULT_API_VERSION = "2023-08-01"
 
 # Statuses that keep full Pro access.
@@ -154,6 +154,9 @@ def verify_webhook_signature(raw_body: bytes, headers: dict[str, str]) -> bool:
     API version). We accept either form and compare in constant time.
     """
     secret = os.environ.get(config.CASHFREE_WEBHOOK_SECRET_ENV, "")
+    # HTTP header names are case-insensitive; clients (urllib, http servers,
+    # proxies) may deliver any casing, so normalize before lookup.
+    headers = {k.lower(): v for k, v in (headers or {}).items()}
     signature = (headers.get("x-webhook-signature") or "").strip()
     if not (secret and signature):
         logger.warning("Webhook secret or signature header missing")
@@ -384,9 +387,17 @@ class SubscriptionStore:
 # ---------------------------------------------------------------------------
 
 # Cashfree event names → how we treat them.
-GRANT_TYPES = {"ORDER_PAID"}
-REVOKE_TYPES = {"REFUND_STATUS", "REFUND_STATUS_CHANGE"}
-FAIL_TYPES = {"ORDER_FAILED", "ORDER_CANCELLED", "PAYMENT_FAILED"}
+# Include common legacy/alias names defensively so grants/revocations are not
+# silently dropped if Cashfree delivers a differently-named variant.
+GRANT_TYPES = {"ORDER_PAID", "PAYMENT_SUCCESS_WEBHOOK"}
+REVOKE_TYPES = {
+    "REFUND_STATUS", "REFUND_STATUS_CHANGE",
+    "REFUND_STATUS_WEBHOOK", "REFUND_SUCCESS",
+}
+FAIL_TYPES = {
+    "ORDER_FAILED", "ORDER_CANCELLED", "PAYMENT_FAILED",
+    "PAYMENT_FAILED_WEBHOOK",
+}
 
 
 def _order_id_from_event(event: dict[str, Any]) -> str:

@@ -202,6 +202,42 @@ class TestSubscriptionStore(unittest.TestCase):
         access = self.store.access_for_order("ds_abc123")
         self.assertEqual(access["status"], "revoked")
 
+    @mock.patch("deepstream.payments.create_channel_invite", return_value="https://t.me/+abc123")
+    @mock.patch("deepstream.payments.fetch_order")
+    def test_alias_event_names_are_handled(self, mock_fetch, mock_invite):
+        """Legacy/alias event names grant and revoke like the canonical ones."""
+        mock_fetch.return_value = {
+            "order_id": "ds_abc123",
+            "order_status": "PAID",
+            "order_amount": 29.0,
+            "order_currency": "USD",
+        }
+        # Legacy grant alias → grants access.
+        legacy_grant = {
+            "type": "PAYMENT_SUCCESS_WEBHOOK",
+            "event_time": "2026-07-31T12:00:00+05:30",
+            "data": {
+                "order": {"order_id": "ds_abc123", "order_status": "PAID"},
+                "customer_details": {"customer_email": "pro@example.com"},
+            },
+        }
+        result = handle_webhook_event(legacy_grant)
+        self.assertIn("processed", result)
+        mock_invite.assert_called_once()
+        self.assertEqual(self.store.access_for_order("ds_abc123")["status"], "granted")
+
+        # Refund alias → revokes access.
+        legacy_refund = {
+            "type": "REFUND_SUCCESS",
+            "event_time": "2026-08-01T12:00:00+05:30",
+            "data": {"refund": {"order_id": "ds_abc123"}},
+        }
+        with mock.patch("deepstream.payments.revoke_channel_invite") as mock_revoke:
+            result = handle_webhook_event(legacy_refund)
+        mock_revoke.assert_called_once()
+        self.assertIn("processed", result)
+        self.assertIsNone(self.store.load()["orders"]["ds_abc123"]["invite_link"])
+
     def test_access_pending_before_webhook(self):
         access = self.store.access_for_order("ds_unknown")
         self.assertEqual(access["status"], "pending")
@@ -250,6 +286,20 @@ class TestSignatureVerification(unittest.TestCase):
     def test_missing_signature_fails(self):
         body = json.dumps(_paid_event()).encode()
         self.assertFalse(verify_webhook_signature(body, {}))
+
+    def test_header_names_are_case_insensitive(self):
+        """Regression: urllib capitalizes header names; lookup must tolerate any casing."""
+        body = json.dumps(_paid_event()).encode()
+        headers = _sign(body)
+        capitalized = {k.capitalize(): v for k, v in headers.items()}
+        self.assertTrue(verify_webhook_signature(body, capitalized))
+
+    def test_uppercase_headers_pass_after_normalization(self):
+        """Guard: normalization is the only reason uppercase headers pass."""
+        body = json.dumps(_paid_event()).encode()
+        headers = _sign(body)
+        uppercased = {k.upper(): v for k, v in headers.items()}
+        self.assertTrue(verify_webhook_signature(body, uppercased))
 
 
 class TestWebhookRequest(unittest.TestCase):
@@ -350,6 +400,20 @@ class TestCreateOrder(unittest.TestCase):
         os.environ.pop(config.CASHFREE_CLIENT_SECRET_ENV, None)
         with self.assertRaises(RuntimeError):
             create_cashfree_order("pro@example.com")
+
+    def test_cashfree_request_builds_single_pg_url(self):
+        """Regression: base + path must concatenate to one /pg/orders (not /pg/pg/orders)."""
+        from deepstream import payments
+
+        with mock.patch("deepstream.payments.urllib.request.urlopen") as mock_open:
+            mock_resp = mock.MagicMock()
+            mock_resp.read.return_value = b'{"order_status": "ACTIVE"}'
+            mock_open.return_value.__enter__.return_value = mock_resp
+            payments._cashfree_request("POST", "/pg/orders", {"order_id": "ds_x"})
+
+        req = mock_open.call_args.args[0]
+        self.assertEqual(req.full_url, "https://sandbox.cashfree.com/pg/orders")
+        self.assertNotIn("/pg/pg", req.full_url)
 
 
 if __name__ == "__main__":

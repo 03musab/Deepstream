@@ -31,8 +31,8 @@ export const json = (body, status = 200) =>
 
 export const apiBase = () =>
   env("CASHFREE_ENV", "sandbox").toLowerCase() === "production"
-    ? "https://api.cashfree.com/pg"
-    : "https://sandbox.cashfree.com/pg";
+    ? "https://api.cashfree.com"
+    : "https://sandbox.cashfree.com";
 
 export const DEFAULT_API_VERSION = "2023-08-01";
 
@@ -171,9 +171,17 @@ export async function accessForOrder(orderId) {
    Webhook event handling
 --------------------------------------------------------------------------- */
 
-const GRANT_TYPES = new Set(["ORDER_PAID"]);
-const REVOKE_TYPES = new Set(["REFUND_STATUS", "REFUND_STATUS_CHANGE"]);
-const FAIL_TYPES = new Set(["ORDER_FAILED", "ORDER_CANCELLED", "PAYMENT_FAILED"]);
+// Include common legacy/alias names defensively so grants/revocations are not
+// silently dropped if Cashfree delivers a differently-named variant.
+const GRANT_TYPES = new Set(["ORDER_PAID", "PAYMENT_SUCCESS_WEBHOOK"]);
+const REVOKE_TYPES = new Set([
+  "REFUND_STATUS", "REFUND_STATUS_CHANGE",
+  "REFUND_STATUS_WEBHOOK", "REFUND_SUCCESS",
+]);
+const FAIL_TYPES = new Set([
+  "ORDER_FAILED", "ORDER_CANCELLED", "PAYMENT_FAILED",
+  "PAYMENT_FAILED_WEBHOOK",
+]);
 
 function orderIdFromEvent(event) {
   const data = event.data || {};
