@@ -1,7 +1,6 @@
 import http.server
 import json
 import os
-import shutil
 
 SIGNAL_SITE = "signal_site"
 

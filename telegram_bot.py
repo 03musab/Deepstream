@@ -12,17 +12,17 @@ def format_signal_report(signals):
         "**Deepstream Weekly Report**\n"
     ]
 
-    active = [s for s in signals if s.get("status") == "ACTIVE"]
+    active = [s for s in signals if s.get("status") == "ACTIVE" and s.get("direction") != "NONE"]
     if not active:
         lines.append("No active signals this week.")
         return "\n".join(lines)
 
     for s in active:
-        emoji = {"HIGH": "🟢", "MEDIUM": "🟡", "LOW": "🔵", "NOISE": "⚪"}.get(s["confidence"], "⚪")
-        direction_emoji = "🔼" if s["direction"] == "LONG" else "🔽"
+        tag = {"HIGH": "[HIGH]", "MEDIUM": "[MED]", "LOW": "[LOW]"}.get(s["confidence"], "")
+        arrow = "[LONG]" if s["direction"] == "LONG" else "[SHORT]"
         lines.append(
-            f"{emoji} **{s['pair']}**\n"
-            f"  {direction_emoji} {s['direction']} | Entry: ${s['entry']}\n"
+            f"{tag} {s['pair']}\n"
+            f"  {arrow} | Entry: ${s['entry']}\n"
             f"  SL: ${s['stop_loss']} | TP: ${s['take_profit']}\n"
             f"  Confidence: {s['confidence']} (r={s['pearson_r']}) | Lag: {s['lag_days']}d\n"
         )

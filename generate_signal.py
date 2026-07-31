@@ -10,13 +10,21 @@ DATA_DIR = "data"
 SIGNAL_FILE = "latest_signal.json"
 PARAM_FILE = "optimized_parameters.json"
 
+def run_step(name, script):
+    print(f"=== Running {name} ===")
+    result = subprocess.run([sys.executable, script], capture_output=True, text=True)
+    if result.returncode != 0:
+        print(f"WARNING: {script} failed (exit {result.returncode}):")
+        print(result.stderr[-2000:] if result.stderr else "(no stderr)")
+    return result.returncode == 0
+
 def run_pipeline():
-    print("=== Running Data Fetch ===")
-    subprocess.run([sys.executable, "fetch_data.py"], capture_output=True)
-    print("=== Running Optimizer ===")
-    subprocess.run([sys.executable, "quant_optimizer.py"], capture_output=True)
-    print("=== Running Backtests ===")
-    subprocess.run([sys.executable, "run_backtests.py"], capture_output=True)
+    ok = True
+    ok &= run_step("Data Fetch", "fetch_data.py")
+    ok &= run_step("Optimizer", "quant_optimizer.py")
+    ok &= run_step("Backtests", "run_backtests.py")
+    if not ok:
+        print("WARNING: One or more pipeline steps failed. Using best available data.")
 
 def load_params():
     if os.path.exists(PARAM_FILE):
@@ -32,7 +40,6 @@ def compute_signal(params):
     ]
 
     signals = []
-    today = datetime.now()
     for cfg in test_configs:
         ocean_path = os.path.join(DATA_DIR, cfg["ocean_file"])
         price_path = os.path.join(DATA_DIR, cfg["price_file"])
@@ -60,8 +67,14 @@ def compute_signal(params):
         r = np.corrcoef(clean[cfg["price_col"]], clean["ocean_lagged"])[0, 1]
         latest_ocean = merged[cfg["ocean_col"]].iloc[-1]
         latest_price = merged[cfg["price_col"]].iloc[-1]
-        ocean_change = merged[cfg["ocean_col"]].iloc[-1] - merged[cfg["ocean_col"]].iloc[-min(lag, 30, 1)]
-        price_change_pct = ((merged[cfg["price_col"]].iloc[-1] / merged[cfg["price_col"]].iloc[-min(30, len(merged)-1)] - 1) * 100)
+
+        window = max(1, min(lag, 30))
+        if len(merged) > window:
+            prev_ocean = merged[cfg["ocean_col"]].iloc[-1 - window]
+            ocean_change = latest_ocean - prev_ocean
+        else:
+            ocean_change = 0.0
+        price_change_pct = ((merged[cfg["price_col"]].iloc[-1] / merged[cfg["price_col"]].iloc[-min(30, len(merged) - 1)] - 1) * 100)
 
         abs_r = abs(r)
         if abs_r >= 0.7:
@@ -73,7 +86,17 @@ def compute_signal(params):
         else:
             confidence = "NOISE"
 
-        direction = "LONG" if (r > 0 and ocean_change > 0) or (r < 0 and ocean_change < 0) else "SHORT"
+        if confidence == "NOISE":
+            signals.append({
+                "pair": cfg["name"],
+                "direction": "NONE",
+                "confidence": "NOISE",
+                "pearson_r": round(r, 4),
+                "lag_days": lag,
+                "status": "NO_TRADE"
+            })
+            continue
+
         if r > 0:
             direction = "LONG" if ocean_change > 0 else "SHORT"
         else:
@@ -99,9 +122,12 @@ def compute_signal(params):
 
     return signals
 
-def generate():
+def generate(skip_pipeline=False):
     print("=== Deepstream Signal Generator ===")
-    run_pipeline()
+    if not skip_pipeline:
+        run_pipeline()
+    else:
+        print("Skipping pipeline (using existing data)")
 
     params = load_params()
     signals = compute_signal(params)
@@ -128,4 +154,9 @@ def generate():
             print(f"  {s['pair']}: {s['direction']} @ {s['entry']} | r={s['pearson_r']} | {s['confidence']} confidence")
 
 if __name__ == "__main__":
-    generate()
+    import argparse
+    parser = argparse.ArgumentParser(description="Generate Deepstream trading signals")
+    parser.add_argument("--skip-pipeline", action="store_true",
+                        help="Skip fetch/optimize/backtest steps, use existing data")
+    args = parser.parse_args()
+    generate(skip_pipeline=args.skip_pipeline)
