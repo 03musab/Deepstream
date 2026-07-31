@@ -10,24 +10,24 @@ export default async (req) => {
 
   if (!verifyWebhookSignature(rawBody, req.headers)) {
     console.warn("Cashfree webhook signature verification failed");
-    return json({ error: "invalid signature" }, 401);
+    return json({ error: "invalid signature" }, 401, req);
   }
 
   let event;
   try {
     event = JSON.parse(rawBody);
   } catch {
-    return json({ error: "invalid body" }, 400);
+    return json({ error: "invalid body" }, 400, req);
   }
   if (!event || typeof event !== "object") {
-    return json({ error: "empty body" }, 400);
+    return json({ error: "empty body" }, 400, req);
   }
 
   try {
     const summary = await handleWebhookEvent(event);
-    return json({ success: true, summary });
+    return json({ success: true, summary }, 200, req);
   } catch (err) {
     console.error("Failed to process Cashfree webhook", err);
-    return json({ error: "processing failed" }, 500);
+    return json({ error: "processing failed" }, 500, req);
   }
 };

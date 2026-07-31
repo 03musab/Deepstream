@@ -4,4 +4,4 @@
 
 import { json, paymentsConfig } from "./_shared/cashfree.mjs";
 
-export default async () => json(paymentsConfig());
+export default async (req) => json(paymentsConfig(), 200, req);

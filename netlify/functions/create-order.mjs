@@ -5,21 +5,37 @@
 
 import { randomUUID } from "node:crypto";
 
-import { cashfreeRequest, env, json } from "./_shared/cashfree.mjs";
+import {
+  cashfreeRequest,
+  env,
+  json,
+  rateLimited,
+  validEmail,
+} from "./_shared/cashfree.mjs";
 
 export default async (req) => {
-  if (req.method !== "POST") return json({ error: "method not allowed" }, 405);
+  if (req.method !== "POST") return json({ error: "method not allowed" }, 405, req);
+
+  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+  if (rateLimited(`create-order:${ip}`, 20, 60_000)) {
+    return json({ error: "too many requests" }, 429, req);
+  }
 
   let payload = {};
   try {
     payload = await req.json();
   } catch {
-    return json({ error: "invalid body" }, 400);
+    return json({ error: "invalid body" }, 400, req);
   }
 
   const customerEmail = String(payload.customer_email || "").trim();
   const customerPhone = String(payload.customer_phone || "").trim();
-  if (!customerEmail) return json({ error: "customer_email required" }, 400);
+  if (!validEmail(customerEmail)) {
+    return json({ error: "customer_email required" }, 400, req);
+  }
+  if (customerPhone.length > 20) {
+    return json({ error: "customer_phone invalid" }, 400, req);
+  }
 
   const orderId = "ds_" + randomUUID().replace(/-/g, "").slice(0, 16);
   const amount = Number(env("CASHFREE_ORDER_AMOUNT", "29"));
@@ -45,9 +61,9 @@ export default async (req) => {
       order_id: orderId,
       payment_session_id: data.payment_session_id || "",
       order_status: data.order_status || "",
-    });
+    }, 200, req);
   } catch (err) {
     console.error("Create order failed", err);
-    return json({ error: "order creation failed" }, 502);
+    return json({ error: "order creation failed" }, 502, req);
   }
 };

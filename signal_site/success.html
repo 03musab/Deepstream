@@ -118,16 +118,25 @@
   <script>
     const $ = (id) => document.getElementById(id);
 
+    // Escape server-provided strings before they are placed into innerHTML.
+    const esc = (value) => String(value ?? "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+
     function showGranted(inviteLink, expiresAt) {
       $("status-line").textContent = "Your Pro subscription is active.";
       $("success-state").className = "success-state granted";
       const expiry = expiresAt ? new Date(expiresAt).toLocaleDateString() : "30 days";
+      const link = esc(inviteLink);
       $("success-state").innerHTML = `
         <div class="check">&#10003;</div>
         <h2>Private channel access</h2>
-        <p class="section-sub">Your invite link is ready. It grants access to one Telegram account and is valid until ${expiry}. Renew monthly for uninterrupted access.</p>
-        <div class="invite-box">${inviteLink}</div>
-        <a class="btn btn-primary" href="${inviteLink}" target="_blank" rel="noopener">Join the Pro channel</a>
+        <p class="section-sub">Your invite link is ready. It grants access to one Telegram account and is valid until ${esc(expiry)}. Renew monthly for uninterrupted access.</p>
+        <div class="invite-box">${link}</div>
+        <a class="btn btn-primary" href="${link}" target="_blank" rel="noopener">Join the Pro channel</a>
         <p class="table-note">Lost the link or need a fresh one? Email <a href="mailto:billing@deepstream.example">billing@deepstream.example</a>.</p>
       `;
     }
@@ -137,7 +146,7 @@
       $("success-state").className = "success-state renew-state";
       $("success-state").innerHTML = `
         <h2>Renew your Pro access</h2>
-        <p class="section-sub">${message || "Your subscription is no longer active."} Renew with a fresh payment to keep receiving full setups.</p>
+        <p class="section-sub">${esc(message) || "Your subscription is no longer active."} Renew with a fresh payment to keep receiving full setups.</p>
         <a class="btn btn-primary renew-btn" href="/#pricing">Renew Pro access</a>
       `;
     }

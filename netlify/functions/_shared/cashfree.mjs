@@ -15,15 +15,69 @@ export const env = (name, fallback = "") => process.env[name] || fallback;
 export const GRANT_STATUSES = new Set(["paid"]);
 export const REVOKE_STATUSES = new Set(["failed", "cancelled", "refunded"]);
 
-export const json = (body, status = 200) =>
-  new Response(JSON.stringify(body), {
-    status,
-    headers: {
-      "Content-Type": "application/json",
-      "Cache-Control": "no-cache",
-      "Access-Control-Allow-Origin": "*",
-    },
-  });
+// Origin we are willing to share data with (from CASHFREE_SITE_URL). When
+// unset, cross-origin browser requests are refused entirely.
+const allowedOrigin = () => {
+  try {
+    return new URL(env("CASHFREE_SITE_URL", "")).origin;
+  } catch {
+    return "";
+  }
+};
+
+export const json = (body, status = 200, req) => {
+  const headers = {
+    "Content-Type": "application/json",
+    "Cache-Control": "no-cache",
+    "X-Content-Type-Options": "nosniff",
+    "X-Frame-Options": "DENY",
+    "Referrer-Policy": "strict-origin-when-cross-origin",
+    "Permissions-Policy": "camera=(), microphone=(), geolocation=()",
+  };
+  const trusted = allowedOrigin();
+  const origin = (req?.headers && req.headers.get("origin")) || "";
+  if (trusted && origin && origin.trim().toLowerCase() === trusted) {
+    headers["Access-Control-Allow-Origin"] = trusted;
+    headers["Vary"] = "Origin";
+  }
+  return new Response(JSON.stringify(body), { status, headers });
+};
+
+// ---------------------------------------------------------------------------
+// Input validation (never trust the client alone)
+// ---------------------------------------------------------------------------
+
+export const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+export const ORDER_ID_RE = /^ds_[0-9a-f]{16}$/;
+
+export const validEmail = (value) =>
+  typeof value === "string" &&
+  value.length > 0 &&
+  value.length <= 254 &&
+  EMAIL_RE.test(value);
+
+export const validOrderId = (value) =>
+  typeof value === "string" && value.length <= 64 && ORDER_ID_RE.test(value);
+
+// ---------------------------------------------------------------------------
+// Best-effort in-memory burst limiter (per warm instance). Production should
+// add an edge-level (CDN/WAF) rate limit in front of the functions too.
+// ---------------------------------------------------------------------------
+
+const hitCounters = new Map();
+
+export function rateLimited(key, max = 20, windowMs = 60_000) {
+  const now = Date.now();
+  const hit = hitCounters.get(key) || { times: [] };
+  hit.times = hit.times.filter((t) => now - t < windowMs);
+  if (hit.times.length >= max) {
+    hitCounters.set(key, hit);
+    return true;
+  }
+  hit.times.push(now);
+  hitCounters.set(key, hit);
+  return false;
+}
 
 /* ---------------------------------------------------------------------------
    Cashfree API (server-side only)

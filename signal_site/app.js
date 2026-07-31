@@ -3,6 +3,14 @@
 
 const $ = (id) => document.getElementById(id);
 
+// Escape server-provided strings before they are placed into innerHTML.
+const esc = (value) => String(value ?? "")
+  .replace(/&/g, "&amp;")
+  .replace(/</g, "&lt;")
+  .replace(/>/g, "&gt;")
+  .replace(/"/g, "&quot;")
+  .replace(/'/g, "&#39;");
+
 const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 const fmtDate = (iso) => {
   const d = new Date(iso);
@@ -30,12 +38,12 @@ function renderTerminal(signals, generatedAt) {
     ? tradeable.map((s, i) => `
         <div class="terminal-line">
           <span class="ts">[${String(i + 1).padStart(2, "0")}:00]</span>
-          <span class="val">${s.pair}</span>
+          <span class="val">${esc(s.pair)}</span>
         </div>
         <div class="terminal-line">
           <span class="ts"></span>
-          <span class="${posClass(s.direction)}">${s.direction}</span>
-          <span class="val">${s.entry}</span>
+          <span class="${posClass(s.direction)}">${esc(s.direction)}</span>
+          <span class="val">${esc(s.entry)}</span>
           <span class="accent">r=${Number(s.pearson_r).toFixed(3)}</span>
         </div>`).join("")
     : `
@@ -56,13 +64,13 @@ function renderSignals(signals, generatedAt) {
     if (s.status !== "ACTIVE") {
       return `
         <tr>
-          <td>${s.pair}</td>
+          <td>${esc(s.pair)}</td>
           <td><span class="pos-none">no trade</span></td>
           <td class="num">—</td><td class="num">—</td><td class="num">—</td>
           <td class="num">—</td>
           <td class="num">${Number(s.pearson_r).toFixed(3)}</td>
-          <td><span class="grade ${gradeClass(s.confidence)}">${gradeLabel(s.confidence)}</span></td>
-          <td class="num">${s.lag_days}d</td>
+          <td><span class="grade ${gradeClass(s.confidence)}">${esc(gradeLabel(s.confidence))}</span></td>
+          <td class="num">${esc(s.lag_days)}d</td>
         </tr>`;
     }
     const rr = s.entry && s.stop_loss
@@ -70,15 +78,15 @@ function renderSignals(signals, generatedAt) {
       : "—";
     return `
       <tr>
-        <td>${s.pair}</td>
-        <td><span class="${posClass(s.direction)}">${s.direction}</span></td>
-        <td class="num">${s.entry}</td>
-        <td class="num">${s.stop_loss}</td>
-        <td class="num">${s.take_profit}</td>
+        <td>${esc(s.pair)}</td>
+        <td><span class="${posClass(s.direction)}">${esc(s.direction)}</span></td>
+        <td class="num">${esc(s.entry)}</td>
+        <td class="num">${esc(s.stop_loss)}</td>
+        <td class="num">${esc(s.take_profit)}</td>
         <td class="num">${rr}</td>
         <td class="num">${Number(s.pearson_r).toFixed(3)}</td>
-        <td><span class="grade ${gradeClass(s.confidence)}">${gradeLabel(s.confidence)}</span></td>
-        <td class="num">${s.lag_days}d</td>
+        <td><span class="grade ${gradeClass(s.confidence)}">${esc(gradeLabel(s.confidence))}</span></td>
+        <td class="num">${esc(s.lag_days)}d</td>
       </tr>`;
   }).join("");
 }
@@ -283,10 +291,10 @@ function renderTrackRecord(record) {
   rows.innerHTML = markets.length
     ? markets.map(([name, m]) => `
         <tr>
-          <td>${name}</td>
-          <td class="num">${m.trades}</td>
-          <td class="num">${m.wins}</td>
-          <td class="num">${m.losses}</td>
+          <td>${esc(name)}</td>
+          <td class="num">${esc(m.trades)}</td>
+          <td class="num">${esc(m.wins)}</td>
+          <td class="num">${esc(m.losses)}</td>
           <td class="num">${Number(m.win_rate_pct).toFixed(1)}%</td>
           <td class="num">${Number(m.avg_return_pct).toFixed(2)}%</td>
         </tr>`).join("")
@@ -300,13 +308,13 @@ function renderTrackRecord(record) {
         const sign = t.return_pct >= 0 ? "+" : "";
         return `
           <div class="recent-card">
-            <span class="rc-pair">${t.signal_date} · ${t.pair}</span>
+            <span class="rc-pair">${esc(t.signal_date)} · ${esc(t.pair)}</span>
             <div class="rc-row">
-              <span class="rc-dir ${posClass(t.direction)}">${t.direction}</span>
+              <span class="rc-dir ${posClass(t.direction)}">${esc(t.direction)}</span>
               <span class="rc-ret ${cls}">${sign}${Number(t.return_pct).toFixed(1)}%</span>
             </div>
             <div class="rc-row" style="font-family:var(--font-mono);font-size:.72rem;color:var(--text-faint)">
-              <span>entry ${t.entry}</span><span>${t.outcome}</span>
+              <span>entry ${esc(t.entry)}</span><span>${esc(t.outcome)}</span>
             </div>
           </div>`;
       }).join("")
