@@ -440,7 +440,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     function removeDynamicTabs() {
-        const dyTabs = ["zones-dynamic", "sales-dynamic", "modeler-dynamic"];
+        const dyTabs = ["zones-dynamic", "modeler-dynamic"];
         dyTabs.forEach(id => {
             const el = document.getElementById(id);
             if (el) el.remove();
@@ -516,52 +516,6 @@ document.addEventListener("DOMContentLoaded", () => {
                             </tr>
                         </tbody>
                     </table>
-                </div>
-            `;
-            mainContent.appendChild(grid);
-        } else if (tabName === "sales") {
-            document.getElementById("page-title").textContent = "Deepstream Pitch deck";
-            const grid = document.createElement("div");
-            grid.id = "sales-dynamic";
-            grid.className = "workspace-grid full-width-panel";
-            grid.innerHTML = `
-                <div class="panel" style="grid-column: span 3; padding: 32px;">
-                    <div style="text-align: center; margin-bottom: 40px;">
-                        <h2 style="font-family: var(--font-header); font-size: 28px; color: var(--color-cyan);">Deepstream Pitch Summary</h2>
-                        <p style="color: var(--text-secondary); max-width: 600px; margin: 10px auto;">Deploying autonomous underwater drones (AUVs) to collect proprietary ocean data, predict global commodity prices, and sell price signals to high-paying client portfolios.</p>
-                    </div>
-                    
-                    <div class="pitch-deck-container">
-                        <div class="deck-card">
-                            <span class="card-badge">P0 - VALIDATE</span>
-                            <h3 class="card-title">Intelligence & Correlation</h3>
-                            <p class="card-desc">Validate ocean-to-commodity price signals using NOAA and Copernicus open-source records. <strong>Target met: Tests 1 & 2 pass with r > 0.72.</strong></p>
-                        </div>
-                        
-                        <div class="deck-card">
-                            <span class="card-badge">P1 - DEMO</span>
-                            <h3 class="card-title">Launch First Client</h3>
-                            <p class="card-desc">Outreach to 20 alt-data buyers at Citadel/Trafigura. Close first 90-day pilot for $15K. Convert to $100K annual deal.</p>
-                        </div>
-                        
-                        <div class="deck-card">
-                            <span class="card-badge">P2 - DEPLOY</span>
-                            <h3 class="card-title">Fleet Deployment</h3>
-                            <p class="card-desc">Raise $2M–$5M Seed/Series A. Deploy first fleet of 20 Kongsberg AUVs across 4 critical global ocean zones.</p>
-                        </div>
-                        
-                        <div class="deck-card">
-                            <span class="card-badge">P3 - SCALE</span>
-                            <h3 class="card-title">Terminal Release</h3>
-                            <p class="card-desc">Expand to 200 AUVs. Launch Deepstream Terminal (the Bloomberg of Ocean Intel) at subscription tiers. Hit $50M ARR.</p>
-                        </div>
-                        
-                        <div class="deck-card">
-                            <span class="card-badge">P4 - EXIT</span>
-                            <h3 class="card-title">Market Dominance</h3>
-                            <p class="card-desc">Acquisition target: Bloomberg, ICE, ICE/Refinitiv, S&P Global, or Palantir at $2B+ valuation (12-18x revenue multiples).</p>
-                        </div>
-                    </div>
                 </div>
             `;
             mainContent.appendChild(grid);
