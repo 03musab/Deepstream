@@ -106,17 +106,16 @@ TELEGRAM_CHANNEL_ENV = "DEEPSTREAM_CHANNEL_ID"
 PRO_CHANNEL_ENV = "DEEPSTREAM_PRO_CHANNEL_ID"
 
 # ---------------------------------------------------------------------------
-# Payments (Paddle — merchant of record)
+# Payments (Gumroad — merchant of record)
 # ---------------------------------------------------------------------------
-PADDLE_ENV_ENV = "PADDLE_ENV"                       # "sandbox" | "live"
-PADDLE_CLIENT_TOKEN_ENV = "PADDLE_CLIENT_TOKEN"     # safe to ship to the browser
-PADDLE_PRICE_ID_ENV = "PADDLE_PRICE_ID"             # Pro $29/mo recurring price
-PADDLE_WEBHOOK_SECRET_ENV = "PADDLE_WEBHOOK_SECRET" # per notification-destination secret
+GUMROAD_ACCESS_TOKEN_ENV = "GUMROAD_ACCESS_TOKEN"   # API token used to verify webhooks/sales
+GUMROAD_PRODUCT_ID_ENV = "GUMROAD_PRODUCT_ID"       # Pro $29/mo membership product id
+GUMROAD_CHECKOUT_URL_ENV = "GUMROAD_CHECKOUT_URL"   # hosted checkout link the buy button opens
 
-# Paddle subscription state cache (lean cache of access decisions).
+# Gumroad subscription state cache (lean cache of access decisions).
 SUBSCRIPTIONS_FILE = BASE_DIR / "data" / "subscriptions.json"
 
 # Server routes for the payment flow.
-PADDLE_WEBHOOK_PATH = "/webhooks/paddle"
+GUMROAD_WEBHOOK_PATH = "/webhooks/gumroad"
 ACCESS_API_PATH = "/api/access"
-PADDLE_CONFIG_API_PATH = "/api/paddle_config"
+GUMROAD_CONFIG_API_PATH = "/api/gumroad_config"

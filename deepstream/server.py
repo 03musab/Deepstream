@@ -12,7 +12,6 @@ from deepstream import config
 from deepstream.chart_data import build_chart_data
 from deepstream.logging_setup import setup_logging
 from deepstream.payments import handle_webhook_request, SubscriptionStore
-
 logger = setup_logging()
 
 
@@ -35,44 +34,39 @@ class DeepstreamHandler(http.server.SimpleHTTPRequestHandler):
         if self.path.startswith(config.ACCESS_API_PATH):
             self._serve_access_lookup(self.path)
             return
-        if self.path == config.PADDLE_CONFIG_API_PATH:
-            self._serve_paddle_config()
+        if self.path == config.GUMROAD_CONFIG_API_PATH:
+            self._serve_gumroad_config()
             return
         super().do_GET()
 
     def do_POST(self):
-        if self.path == config.PADDLE_WEBHOOK_PATH:
-            self._serve_paddle_webhook()
+        if self.path == config.GUMROAD_WEBHOOK_PATH:
+            self._serve_gumroad_webhook()
             return
         self.send_error(404)
 
-    def _serve_paddle_webhook(self):
+    def _serve_gumroad_webhook(self):
         length = int(self.headers.get("Content-Length") or 0)
         raw = self.rfile.read(length) if length else b""
-        signature = self.headers.get("Paddle-Signature", "")
-        status, body = handle_webhook_request(raw, signature)
+        status, body = handle_webhook_request(raw, self.headers.get("Content-Type", ""))
         self._serve_json_obj(body, status=status)
 
     def _serve_access_lookup(self, path: str):
         query = urllib.parse.parse_qs(urllib.parse.urlparse(path).query)
-        txn_id = (query.get("transaction_id") or [""])[0]
-        if not txn_id:
-            self._serve_json_obj({"error": "transaction_id required"}, status=400)
+        sale_id = (query.get("sale_id") or [""])[0]
+        if not sale_id:
+            self._serve_json_obj({"error": "sale_id required"}, status=400)
             return
-        self._serve_json_obj(SubscriptionStore().access_for_transaction(txn_id))
+        self._serve_json_obj(SubscriptionStore().access_for_sale(sale_id))
 
-    def _serve_paddle_config(self):
-        client_token = os.environ.get(config.PADDLE_CLIENT_TOKEN_ENV, "")
-        price_id = os.environ.get(config.PADDLE_PRICE_ID_ENV, "")
-        env = os.environ.get(config.PADDLE_ENV_ENV, "sandbox")
-        if not (client_token and price_id):
+    def _serve_gumroad_config(self):
+        checkout_url = os.environ.get(config.GUMROAD_CHECKOUT_URL_ENV, "")
+        if not checkout_url:
             self._serve_json_obj({"configured": False}, status=503)
             return
         self._serve_json_obj({
             "configured": True,
-            "env": env,
-            "client_token": client_token,
-            "price_id": price_id,
+            "checkout_url": checkout_url,
         })
 
     def _serve_json(self, path: Path):

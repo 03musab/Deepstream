@@ -62,22 +62,27 @@ DEEPSTREAM_CHANNEL_ID=<private channel id>
   config-driven and auditable in `deepstream/config.py`.
 
 ## Remaining Launch Steps
-1. **Payment integration (implemented).** Paddle (Merchant of Record) handles
-   the $29/mo Pro subscription via Paddle.js overlay checkout. Webhooks arrive
-   at `POST /webhooks/paddle`, are HMAC-verified in `deepstream/payments.py`,
-   and on a successful subscription the bot mints a single-use invite link to
-   the private Pro Telegram channel. The customer is redirected to
-   `success.html?transaction_id=...`, which polls `/api/access` and shows the
-   invite link. Revocation (`subscription.canceled`/`paused`) revokes the link.
-   **Setup still required:** create the Paddle product + price + client token +
-   notification destination, and fill in the Paddle vars in `.env`.
+1. **Payment integration (implemented).** Gumroad (Merchant of Record) handles
+   the $29/mo Pro membership via a hosted checkout. Webhooks arrive at
+   `POST /webhooks/gumroad`; because Gumroad does not sign payloads, `sale`
+   events are verified against the Gumroad API in `deepstream/payments.py`
+   before access is granted. On a verified sale the bot mints a single-use
+   invite link to the private Pro Telegram channel. The product's "Redirect
+   URL" sends the customer to `success.html?sale_id=...`, which polls
+   `/api/access` and shows the invite link. Revocation
+   (`refund`/`subscription_ended`/`cancellation`) revokes the link.
+   **Setup still required:** create the Gumroad Pro membership, set the
+   redirect URL + resource subscriptions, generate an API token, and fill in
+   the Gumroad vars in `.env`.
 2. Create the private Telegram channel, add the bot as admin (invite-link
    permission), set `DEEPSTREAM_PRO_CHANNEL_ID`; fill in the rest of `.env`.
 3. Run `./run_weekly.sh` and confirm delivery.
 
 ### Go-live checklist for payments
-- [ ] `PADDLE_ENV=live`, `PADDLE_CLIENT_TOKEN`, `PADDLE_PRICE_ID`, `PADDLE_WEBHOOK_SECRET` set
-- [ ] Webhook URL = `https://<your-domain>/webhooks/paddle`, subscribed to
-      `subscription.created/activated/updated/canceled/paused/past_due` and `transaction.completed`
+- [ ] `GUMROAD_ACCESS_TOKEN`, `GUMROAD_PRODUCT_ID`, `GUMROAD_CHECKOUT_URL` set
+- [ ] Gumroad product "Redirect URL" = `https://deepstreamofficial.netlify.app/success.html`
+- [ ] Resource subscriptions registered for `sale`, `refund`, `cancellation`,
+      `subscription_updated`, `subscription_ended`, `subscription_restarted`
+      → `https://<your-domain>/webhooks/gumroad`
 - [ ] `DEEPSTREAM_BOT_TOKEN` + `DEEPSTREAM_PRO_CHANNEL_ID` set; bot is admin of the Pro channel
-- [ ] Sandbox test card `4242 4242 4242 4242` confirms end-to-end invite delivery
+- [ ] A test purchase (Gumroad test purchase) confirms end-to-end invite delivery

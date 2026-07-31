@@ -142,14 +142,14 @@
 
     async function poll() {
       const params = new URLSearchParams(window.location.search);
-      const txn = params.get("transaction_id");
-      if (!txn) return showError("No transaction reference was found. Please use the link from the checkout confirmation.");
+      const saleId = params.get("sale_id");
+      if (!saleId) return showError("No sale reference was found. Please use the link from the checkout confirmation.");
 
       let attempts = 0;
       const timer = setInterval(async () => {
         attempts += 1;
         try {
-          const res = await fetch(`/api/access?transaction_id=${encodeURIComponent(txn)}`, { cache: "no-store" });
+          const res = await fetch(`/api/access?sale_id=${encodeURIComponent(saleId)}`, { cache: "no-store" });
           const data = await res.json();
           if (data.status === "granted") {
             clearInterval(timer);
