@@ -392,7 +392,11 @@ async function startCheckout() {
       body: JSON.stringify({ customer_email: email, customer_phone: phone }),
     });
     const order = await res.json();
-    if (!res.ok || !order.payment_session_id) throw new Error("order creation failed");
+    if (!res.ok || !order.payment_session_id) {
+      // Surface the provider's real error (e.g. "api Request Failed") when the
+      // backend includes it, instead of a bare "order creation failed".
+      throw new Error(order.detail || "order creation failed");
+    }
     // Remember the order id so success.html can poll even if the redirect
     // drops the query parameter.
     sessionStorage.setItem("deepstream_order_id", order.order_id);
@@ -412,7 +416,7 @@ async function startCheckout() {
     }
   } catch (e) {
     console.error("Checkout failed:", e);
-    setCheckoutStatus("Could not start checkout. Please try again.", true);
+    setCheckoutStatus(`Could not start checkout: ${e.message}`, true);
     submit.disabled = false;
   }
 }

@@ -64,6 +64,10 @@ export default async (req) => {
     }, 200, req);
   } catch (err) {
     console.error("Create order failed", err);
-    return json({ error: "order creation failed" }, 502, req);
+    return json(
+      { error: "order creation failed", detail: (err && err.message) || "" },
+      502,
+      req,
+    );
   }
 };

@@ -415,6 +415,30 @@ class TestCreateOrder(unittest.TestCase):
         self.assertEqual(req.full_url, "https://sandbox.cashfree.com/pg/orders")
         self.assertNotIn("/pg/pg", req.full_url)
 
+    def test_cashfree_request_surfaces_provider_error(self):
+        """A rejected order must carry the provider's real message/code/status."""
+        import urllib.error
+
+        from deepstream import payments
+
+        err_body = mock.MagicMock()
+        err_body.read.return_value = (
+            b'{"message": "api Request Failed", "code": "request_failed"}'
+        )
+        http_error = urllib.error.HTTPError(
+            "https://sandbox.cashfree.com/pg/orders", 500,
+            "Internal Server Error", {}, err_body,
+        )
+        with mock.patch(
+            "deepstream.payments.urllib.request.urlopen", side_effect=http_error
+        ):
+            with self.assertRaises(payments.CashfreeError) as ctx:
+                payments._cashfree_request("POST", "/pg/orders", {"order_id": "ds_x"})
+
+        self.assertEqual(ctx.exception.status, 500)
+        self.assertEqual(ctx.exception.code, "request_failed")
+        self.assertIn("api Request Failed", str(ctx.exception))
+
 
 if __name__ == "__main__":
     unittest.main()

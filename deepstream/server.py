@@ -16,6 +16,7 @@ from deepstream import config
 from deepstream.chart_data import build_chart_data
 from deepstream.logging_setup import setup_logging
 from deepstream.payments import (
+    CashfreeError,
     create_cashfree_order,
     handle_webhook_request,
     payments_config,
@@ -184,6 +185,16 @@ class DeepstreamHandler(http.server.SimpleHTTPRequestHandler):
             return
         try:
             order = create_cashfree_order(customer_email, customer_phone)
+        except CashfreeError as exc:
+            # Provider rejected the order — surface the real reason (e.g. the
+            # merchant sandbox account rejecting order creation) so operators
+            # can diagnose it from the browser/console instead of a bare 502.
+            logger.exception("Failed to create Cashfree order")
+            self._serve_json_obj(
+                {"error": "order creation failed", "detail": str(exc)},
+                status=502,
+            )
+            return
         except Exception:
             logger.exception("Failed to create Cashfree order")
             self._serve_json_obj({"error": "order creation failed"}, status=502)

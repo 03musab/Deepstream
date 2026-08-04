@@ -35,6 +35,7 @@ import json
 import os
 import threading
 import time
+import urllib.error
 import urllib.parse
 import urllib.request
 import uuid
@@ -58,6 +59,20 @@ REVOKE_STATUSES = {"failed", "cancelled", "refunded"}
 
 # How far into the future a minted Telegram invite link is valid (seconds).
 INVITE_LINK_TTL_SECONDS = 30 * 24 * 3600  # 30 days
+
+
+class CashfreeError(RuntimeError):
+    """A Cashfree API request was rejected (non-2xx) or otherwise failed.
+
+    Carries the provider's ``status`` and ``code`` so callers can surface the
+    real reason (e.g. the merchant sandbox account rejecting order creation)
+    instead of a generic message.
+    """
+
+    def __init__(self, message: str, *, status: int = 0, code: str = ""):
+        super().__init__(message)
+        self.status = status
+        self.code = code
 
 
 # ---------------------------------------------------------------------------
@@ -89,8 +104,24 @@ def _cashfree_request(method: str, path: str,
     req = urllib.request.Request(
         f"{cashfree_base_url()}{path}", data=body, method=method, headers=headers
     )
-    with urllib.request.urlopen(req, timeout=20) as resp:
-        return json.loads(resp.read().decode("utf-8"))
+    try:
+        with urllib.request.urlopen(req, timeout=20) as resp:
+            return json.loads(resp.read().decode("utf-8"))
+    except urllib.error.HTTPError as exc:
+        # Cashfree returns the real reason in the JSON body (e.g.
+        # {"message": "api Request Failed", "code": "request_failed"}).
+        # Preserve it instead of collapsing to a generic failure.
+        detail, code = "", ""
+        try:
+            err_body = json.loads(exc.read().decode("utf-8", errors="replace"))
+            detail = str(err_body.get("message") or "")
+            code = str(err_body.get("code") or "")
+        except (ValueError, TypeError):
+            pass
+        raise CashfreeError(
+            detail or f"Cashfree API error (HTTP {exc.code})",
+            status=exc.code, code=code,
+        ) from exc
 
 
 def create_cashfree_order(customer_email: str, customer_phone: str = "") -> dict[str, Any]:

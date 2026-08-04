@@ -109,7 +109,14 @@ export async function cashfreeRequest(method, path, payload) {
   });
   const body = await res.json().catch(() => ({}));
   if (!res.ok) {
-    throw new Error(`Cashfree ${method} ${path} failed: ${res.status}`);
+    // Preserve the provider's real error message so the caller can surface it
+    // (e.g. "api Request Failed" when the merchant sandbox rejects the order).
+    const err = new Error(
+      (body && body.message) || `Cashfree ${method} ${path} failed: ${res.status}`
+    );
+    err.code = (body && body.code) || "";
+    err.status = res.status;
+    throw err;
   }
   return body;
 }

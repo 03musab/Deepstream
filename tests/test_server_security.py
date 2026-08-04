@@ -10,8 +10,10 @@ import tempfile
 import threading
 import unittest
 from pathlib import Path
+from unittest import mock
 
 from deepstream import config
+from deepstream.payments import CashfreeError
 from deepstream.server import DeepstreamHandler
 
 
@@ -145,6 +147,42 @@ class TestInputValidation(ServerTestCase):
         status, _, body = self.request("GET", "/api/access?order_id=ds_0123456789abcdef")
         self.assertEqual(status, 200)
         self.assertEqual(json.loads(body)["status"], "pending")
+
+
+class TestCreateOrderErrors(ServerTestCase):
+    @mock.patch(
+        "deepstream.server.create_cashfree_order",
+        side_effect=CashfreeError(
+            "api Request Failed", status=500, code="request_failed"
+        ),
+    )
+    def test_provider_rejection_includes_detail(self, mock_create):
+        """502 from Cashfree must surface the provider's real message."""
+        status, _, body = self.request(
+            "POST", "/api/create-order",
+            body=json.dumps({"customer_email": "ok@example.com"}),
+            headers={"Content-Type": "application/json"},
+        )
+        self.assertEqual(status, 502)
+        payload = json.loads(body)
+        self.assertEqual(payload["error"], "order creation failed")
+        self.assertIn("api Request Failed", payload["detail"])
+
+    @mock.patch(
+        "deepstream.server.create_cashfree_order",
+        side_effect=RuntimeError("boom"),
+    )
+    def test_unexpected_error_stays_generic(self, mock_create):
+        """Non-provider failures must not leak internals to the client."""
+        status, _, body = self.request(
+            "POST", "/api/create-order",
+            body=json.dumps({"customer_email": "ok@example.com"}),
+            headers={"Content-Type": "application/json"},
+        )
+        self.assertEqual(status, 502)
+        payload = json.loads(body)
+        self.assertEqual(payload["error"], "order creation failed")
+        self.assertNotIn("detail", payload)
 
 
 class TestBodyLimit(ServerTestCase):
