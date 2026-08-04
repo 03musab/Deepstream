@@ -8,6 +8,7 @@ import { randomUUID } from "node:crypto";
 import {
   cashfreeRequest,
   env,
+  fetchOrder,
   json,
   normalizePhone,
   rateLimited,
@@ -67,6 +68,25 @@ export default async (req) => {
       order_status: data.order_status || "",
     }, 200, req);
   } catch (err) {
+    // Cashfree's sandbox occasionally answers POST /pg/orders with HTTP 500
+    // "request_failed" even though the order was actually created (a GET shows
+    // it ACTIVE with a valid payment_session_id). Recover by fetching the
+    // order; only surface the provider error if it truly does not exist.
+    if (err && err.status === 500) {
+      try {
+        const data = await fetchOrder(orderId);
+        if (data.order_status === "ACTIVE" && data.payment_session_id) {
+          return json({
+            order_id: orderId,
+            payment_session_id: data.payment_session_id,
+            order_status: data.order_status || "",
+          }, 200, req);
+        }
+      } catch (recoveryErr) {
+        // Order really was not created — fall through to the provider error.
+        console.warn("Recovery fetch failed for", orderId, recoveryErr);
+      }
+    }
     console.error("Create order failed", err);
     return json(
       {

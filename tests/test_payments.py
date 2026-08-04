@@ -401,6 +401,42 @@ class TestCreateOrder(unittest.TestCase):
         with self.assertRaises(RuntimeError):
             create_cashfree_order("pro@example.com")
 
+    def test_create_order_recovers_after_sandbox_500(self):
+        """Cashfree sandbox returns 500 on create while the order is actually
+        created; the caller must recover the payment_session_id via a GET."""
+        from deepstream import payments
+
+        with mock.patch("deepstream.payments._cashfree_request") as mock_create, \
+                mock.patch("deepstream.payments.fetch_order") as mock_fetch:
+            mock_create.side_effect = payments.CashfreeError(
+                "api Request Failed", status=500, code="request_failed"
+            )
+            mock_fetch.return_value = {
+                "order_id": "ds_recovered",
+                "order_status": "ACTIVE",
+                "payment_session_id": "session_recovered_123",
+            }
+            result = create_cashfree_order("pro@example.com", "9876543210")
+
+        self.assertEqual(result["payment_session_id"], "session_recovered_123")
+        self.assertEqual(result["order_status"], "ACTIVE")
+        mock_fetch.assert_called_once()
+
+    def test_create_order_re_raises_when_recovery_fails(self):
+        """If the 500 is real (order not found on GET), the error propagates."""
+        from deepstream import payments
+
+        with mock.patch("deepstream.payments._cashfree_request") as mock_create, \
+                mock.patch("deepstream.payments.fetch_order") as mock_fetch:
+            mock_create.side_effect = payments.CashfreeError(
+                "api Request Failed", status=500, code="request_failed"
+            )
+            mock_fetch.side_effect = payments.CashfreeError(
+                "order not found", status=404, code="order_not_found"
+            )
+            with self.assertRaises(payments.CashfreeError):
+                create_cashfree_order("pro@example.com", "9876543210")
+
     def test_cashfree_request_builds_single_pg_url(self):
         """Regression: base + path must concatenate to one /pg/orders (not /pg/pg/orders)."""
         from deepstream import payments

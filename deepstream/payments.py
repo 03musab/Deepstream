@@ -148,7 +148,26 @@ def create_cashfree_order(customer_email: str, customer_phone: str = "") -> dict
     if site_url:
         payload["order_meta"] = {"return_url": f"{site_url}/success.html"}
 
-    data = _cashfree_request("POST", "/pg/orders", payload)
+    try:
+        data = _cashfree_request("POST", "/pg/orders", payload)
+    except CashfreeError as exc:
+        # Cashfree's sandbox occasionally answers POST /pg/orders with HTTP 500
+        # "request_failed" (code "request_failed", type "api_error") even though
+        # the order was actually created — a GET shows it ACTIVE with a valid
+        # payment_session_id. Recover by fetching the order; only re-raise if it
+        # really does not exist or is unusable.
+        if exc.status == 500:
+            try:
+                data = fetch_order(order_id)
+            except Exception:
+                data = {}
+            if data.get("order_status") == "ACTIVE" and data.get("payment_session_id"):
+                return {
+                    "order_id": order_id,
+                    "payment_session_id": data["payment_session_id"],
+                    "order_status": data.get("order_status") or "",
+                }
+        raise
     return {
         "order_id": order_id,
         "payment_session_id": data.get("payment_session_id") or "",
