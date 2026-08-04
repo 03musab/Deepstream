@@ -438,7 +438,7 @@ async function openCheckoutModal() {
       return;
     }
     cashfreeMode = cfg.mode;
-    const amount = `${cfg.currency === "USD" ? "$" : ""}${cfg.amount}${cfg.currency !== "USD" ? " " + cfg.currency : ""}`;
+    const amount = `${cfg.currency === "INR" ? "₹" : ""}${Number(cfg.amount).toLocaleString("en-IN")}${cfg.currency !== "INR" ? " " + cfg.currency : ""}`;
     if ($("co-amount")) $("co-amount").textContent = amount;
     if ($("co-submit")) {
       $("co-submit").textContent = `Pay ${amount} — Subscribe`;

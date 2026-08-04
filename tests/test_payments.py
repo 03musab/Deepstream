@@ -39,8 +39,8 @@ def _paid_event(order_id: str = "ds_abc123", **overrides) -> dict:
                 "order_id": order_id,
                 "order_status": "PAID",
                 "cf_order_id": "1234567890",
-                "order_amount": 29.0,
-                "order_currency": "USD",
+                "order_amount": 2499.0,
+                "order_currency": "INR",
             },
             "customer_details": {
                 "customer_id": "cust_01",
@@ -66,8 +66,8 @@ class TestSubscriptionStore(unittest.TestCase):
         os.environ[config.CASHFREE_CLIENT_ID_ENV] = "cf-client-id"
         os.environ[config.CASHFREE_CLIENT_SECRET_ENV] = "cf-client-secret"
         os.environ[config.CASHFREE_WEBHOOK_SECRET_ENV] = "test-webhook-secret"
-        os.environ[config.CASHFREE_ORDER_AMOUNT_ENV] = "29"
-        os.environ[config.CASHFREE_ORDER_CURRENCY_ENV] = "USD"
+        os.environ[config.CASHFREE_ORDER_AMOUNT_ENV] = "2499"
+        os.environ[config.CASHFREE_ORDER_CURRENCY_ENV] = "INR"
 
     def tearDown(self):
         config.SUBSCRIPTIONS_FILE = self._orig_file
@@ -82,8 +82,8 @@ class TestSubscriptionStore(unittest.TestCase):
             "order_id": "ds_abc123",
             "cf_order_id": "1234567890",
             "order_status": "PAID",
-            "order_amount": 29.0,
-            "order_currency": "USD",
+            "order_amount": 2499.0,
+            "order_currency": "INR",
             "customer_details": {"customer_email": "pro@example.com"},
         }
         result = handle_webhook_event(_paid_event())
@@ -99,8 +99,8 @@ class TestSubscriptionStore(unittest.TestCase):
         mock_fetch.return_value = {
             "order_id": "ds_abc123",
             "order_status": "ACTIVE",
-            "order_amount": 29.0,
-            "order_currency": "USD",
+            "order_amount": 2499.0,
+            "order_currency": "INR",
         }
         result = handle_webhook_event(_paid_event())
         self.assertIn("rejected", result)
@@ -114,7 +114,7 @@ class TestSubscriptionStore(unittest.TestCase):
             "order_id": "ds_abc123",
             "order_status": "PAID",
             "order_amount": 1.0,  # tampered amount
-            "order_currency": "USD",
+            "order_currency": "INR",
         }
         result = handle_webhook_event(_paid_event())
         self.assertIn("rejected", result)
@@ -126,8 +126,8 @@ class TestSubscriptionStore(unittest.TestCase):
         mock_fetch.return_value = {
             "order_id": "ds_abc123",
             "order_status": "PAID",
-            "order_amount": 29.0,
-            "order_currency": "USD",
+            "order_amount": 2499.0,
+            "order_currency": "INR",
         }
         handle_webhook_event(_paid_event())
         handle_webhook_event(_paid_event())
@@ -139,8 +139,8 @@ class TestSubscriptionStore(unittest.TestCase):
         mock_fetch.return_value = {
             "order_id": "ds_abc123",
             "order_status": "PAID",
-            "order_amount": 29.0,
-            "order_currency": "USD",
+            "order_amount": 2499.0,
+            "order_currency": "INR",
         }
         handle_webhook_event(_paid_event())
 
@@ -169,8 +169,8 @@ class TestSubscriptionStore(unittest.TestCase):
         mock_fetch.return_value = {
             "order_id": "ds_abc123",
             "order_status": "PAID",
-            "order_amount": 29.0,
-            "order_currency": "USD",
+            "order_amount": 2499.0,
+            "order_currency": "INR",
         }
         handle_webhook_event(_paid_event())
 
@@ -209,8 +209,8 @@ class TestSubscriptionStore(unittest.TestCase):
         mock_fetch.return_value = {
             "order_id": "ds_abc123",
             "order_status": "PAID",
-            "order_amount": 29.0,
-            "order_currency": "USD",
+            "order_amount": 2499.0,
+            "order_currency": "INR",
         }
         # Legacy grant alias → grants access.
         legacy_grant = {
@@ -249,8 +249,8 @@ class TestSubscriptionStore(unittest.TestCase):
             mock_fetch.return_value = {
                 "order_id": "ds_abc123",
                 "order_status": "PAID",
-                "order_amount": 29.0,
-                "order_currency": "USD",
+                "order_amount": 2499.0,
+                "order_currency": "INR",
             }
             result = handle_webhook_event(_paid_event())
         self.assertIn("processed", result)
@@ -313,8 +313,8 @@ class TestWebhookRequest(unittest.TestCase):
         os.environ[config.CASHFREE_WEBHOOK_SECRET_ENV] = "test-webhook-secret"
         os.environ[config.TELEGRAM_TOKEN_ENV] = "test-bot-token"
         os.environ[config.PRO_CHANNEL_ENV] = "-1001234567890"
-        os.environ[config.CASHFREE_ORDER_AMOUNT_ENV] = "29"
-        os.environ[config.CASHFREE_ORDER_CURRENCY_ENV] = "USD"
+        os.environ[config.CASHFREE_ORDER_AMOUNT_ENV] = "2499"
+        os.environ[config.CASHFREE_ORDER_CURRENCY_ENV] = "INR"
 
     def tearDown(self):
         config.SUBSCRIPTIONS_FILE = self._orig_file
@@ -328,8 +328,8 @@ class TestWebhookRequest(unittest.TestCase):
         mock_fetch.return_value = {
             "order_id": "ds_abc123",
             "order_status": "PAID",
-            "order_amount": 29.0,
-            "order_currency": "USD",
+            "order_amount": 2499.0,
+            "order_currency": "INR",
         }
         body = json.dumps(_paid_event()).encode()
         status, resp = handle_webhook_request(body, _sign(body))
@@ -364,8 +364,8 @@ class TestCreateOrder(unittest.TestCase):
         os.environ[config.CASHFREE_CLIENT_ID_ENV] = "cf-client-id"
         os.environ[config.CASHFREE_CLIENT_SECRET_ENV] = "cf-client-secret"
         os.environ[config.CASHFREE_ENV_ENV] = "sandbox"
-        os.environ[config.CASHFREE_ORDER_AMOUNT_ENV] = "29"
-        os.environ[config.CASHFREE_ORDER_CURRENCY_ENV] = "USD"
+        os.environ[config.CASHFREE_ORDER_AMOUNT_ENV] = "2499"
+        os.environ[config.CASHFREE_ORDER_CURRENCY_ENV] = "INR"
         os.environ[config.CASHFREE_SITE_URL_ENV] = "https://deepstream.example"
 
     def tearDown(self):
@@ -389,8 +389,8 @@ class TestCreateOrder(unittest.TestCase):
         self.assertEqual(args[0], "POST")
         self.assertEqual(args[1], "/pg/orders")
         payload = kwargs["payload"] if "payload" in kwargs else args[2]
-        self.assertEqual(payload["order_amount"], 29.0)
-        self.assertEqual(payload["order_currency"], "USD")
+        self.assertEqual(payload["order_amount"], 2499.0)
+        self.assertEqual(payload["order_currency"], "INR")
         self.assertEqual(payload["customer_details"]["customer_email"], "pro@example.com")
         self.assertEqual(payload["order_meta"]["return_url"],
                          "https://deepstream.example/success.html")

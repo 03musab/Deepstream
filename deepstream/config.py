@@ -114,8 +114,8 @@ CASHFREE_CLIENT_SECRET_ENV = "CASHFREE_CLIENT_SECRET"  # secret key — server-s
 CASHFREE_ENV_ENV = "CASHFREE_ENV"                      # "sandbox" (default) or "production"
 CASHFREE_API_VERSION_ENV = "CASHFREE_API_VERSION"      # e.g. 2023-08-01
 CASHFREE_WEBHOOK_SECRET_ENV = "CASHFREE_WEBHOOK_SECRET"  # verifies webhook signatures
-CASHFREE_ORDER_AMOUNT_ENV = "CASHFREE_ORDER_AMOUNT"    # USD charged per Pro month
-CASHFREE_ORDER_CURRENCY_ENV = "CASHFREE_ORDER_CURRENCY"  # e.g. USD
+CASHFREE_ORDER_AMOUNT_ENV = "CASHFREE_ORDER_AMOUNT"    # INR charged per Pro month
+CASHFREE_ORDER_CURRENCY_ENV = "CASHFREE_ORDER_CURRENCY"  # e.g. INR
 CASHFREE_SITE_URL_ENV = "CASHFREE_SITE_URL"            # base URL of the landing site
 
 # Subscription state cache (lean cache of access decisions).

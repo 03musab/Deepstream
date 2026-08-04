@@ -3,7 +3,7 @@
 Flow:
 1. A visitor clicks "Subscribe" on the landing site. The frontend posts their
    email/phone to ``POST /api/create-order``; this module creates a Cashfree
-   order (``POST /pg/orders``) for one month of Pro access ($29 USD) and
+   order (``POST /pg/orders``) for one month of Pro access (₹2,499 INR) and
    returns the ``payment_session_id`` used to render Cashfree's hosted/drop-in
    checkout (JS SDK v3).
 2. The customer pays on Cashfree's hosted page. Cashfree redirects them back
@@ -20,8 +20,7 @@ Flow:
 Access is granted when a verified, paid order exists and revoked on refund /
 failed payment (matching Cashfree's order lifecycle).
 
-Billing model: Cashfree's auto-recurring e-mandate subscriptions are INR-only,
-so the USD Pro tier is sold as a monthly order. Each successful payment grants
+Billing model: Cashfree's auto-recurring e-mandate subscriptions are INR-only,   so the Pro tier is sold as a monthly order. Each successful payment grants
 30 days of access via a fresh invite link; renewals are new orders from the
 same customer.
 """
@@ -131,8 +130,8 @@ def create_cashfree_order(customer_email: str, customer_phone: str = "") -> dict
     ``payment_session_id`` is what the frontend hands to the Cashfree JS SDK.
     """
     order_id = "ds_" + uuid.uuid4().hex[:16]
-    amount = float(os.environ.get(config.CASHFREE_ORDER_AMOUNT_ENV, "29"))
-    currency = os.environ.get(config.CASHFREE_ORDER_CURRENCY_ENV, "USD")
+    amount = float(os.environ.get(config.CASHFREE_ORDER_AMOUNT_ENV, "2499"))
+    currency = os.environ.get(config.CASHFREE_ORDER_CURRENCY_ENV, "INR")
     site_url = os.environ.get(config.CASHFREE_SITE_URL_ENV, "").strip().rstrip("/")
 
     payload: dict[str, Any] = {
@@ -167,8 +166,8 @@ def payments_config() -> dict[str, Any]:
     return {
         "configured": bool(os.environ.get(config.CASHFREE_CLIENT_ID_ENV)),
         "mode": os.environ.get(config.CASHFREE_ENV_ENV, "sandbox").strip().lower(),
-        "amount": float(os.environ.get(config.CASHFREE_ORDER_AMOUNT_ENV, "29")),
-        "currency": os.environ.get(config.CASHFREE_ORDER_CURRENCY_ENV, "USD"),
+        "amount": float(os.environ.get(config.CASHFREE_ORDER_AMOUNT_ENV, "2499")),
+        "currency": os.environ.get(config.CASHFREE_ORDER_CURRENCY_ENV, "INR"),
     }
 
 
@@ -261,8 +260,8 @@ class SubscriptionStore:
               "customer_id": "...",
               "customer_email": "...",
               "status": "paid" | "failed" | "cancelled" | "refunded",
-              "amount": 29.0,
-              "currency": "USD",
+              "amount": 2499.0,
+              "currency": "INR",
               "invite_link": "https://t.me/...",
               "invite_expires_at": "...",
               "created_at": "...", "updated_at": "...", "occurred_at": "..."
@@ -467,12 +466,12 @@ def handle_webhook_event(event: dict[str, Any]) -> str:
         if fetched.get("order_status") != "PAID":
             store._mark_processed(event_id, occurred_at)
             return f"rejected {etype} (order not PAID)"
-        expected_amount = float(os.environ.get(config.CASHFREE_ORDER_AMOUNT_ENV, "29"))
+        expected_amount = float(os.environ.get(config.CASHFREE_ORDER_AMOUNT_ENV, "2499"))
         if float(fetched.get("order_amount") or 0) != expected_amount:
             store._mark_processed(event_id, occurred_at)
             return f"rejected {etype} (amount mismatch)"
         if fetched.get("order_currency") != os.environ.get(
-                config.CASHFREE_ORDER_CURRENCY_ENV, "USD"):
+                config.CASHFREE_ORDER_CURRENCY_ENV, "INR"):
             store._mark_processed(event_id, occurred_at)
             return f"rejected {etype} (currency mismatch)"
 

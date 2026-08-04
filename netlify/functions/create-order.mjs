@@ -38,8 +38,8 @@ export default async (req) => {
   }
 
   const orderId = "ds_" + randomUUID().replace(/-/g, "").slice(0, 16);
-  const amount = Number(env("CASHFREE_ORDER_AMOUNT", "29"));
-  const currency = env("CASHFREE_ORDER_CURRENCY", "USD");
+  const amount = Number(env("CASHFREE_ORDER_AMOUNT", "2499"));
+  const currency = env("CASHFREE_ORDER_CURRENCY", "INR");
   const siteUrl = env("CASHFREE_SITE_URL", "").replace(/\/+$/, "");
 
   const body = {

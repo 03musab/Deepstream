@@ -11,8 +11,8 @@ transparently on the landing site.
 ## Revenue Model
 | Tier   | Price    | Delivery             | Content |
 |--------|----------|----------------------|---------|
-| Free   | $0       | Public TG channel    | Weekly position summary + confidence grades (no levels) |
-| Pro    | $29/mo   | Private TG channel   | Entry / Stop / Target + full track record |
+| Free   | ₹0       | Public TG channel    | Weekly position summary + confidence grades (no levels) |
+| Pro    | ₹2,499/mo| Private TG channel   | Entry / Stop / Target + full track record |
 
 ### Delivery split (implemented)
 `deepstream.telegram` sends two messages each week:
@@ -74,7 +74,7 @@ DEEPSTREAM_CHANNEL_ID=<private channel id>
 
 ## Remaining Launch Steps
 1. **Payment integration (implemented).** Cashfree Payment Gateway handles the
-   $29/mo Pro membership. A visitor enters their email on the landing page;
+   ₹2,499/mo Pro membership. A visitor enters their email on the landing page;
    `POST /api/create-order` creates a Cashfree order and returns a
    `payment_session_id`, which the Cashfree JS SDK (`cashfree.checkout`)
    renders as a hosted/drop-in checkout. Cashfree sends **signed** webhooks to
@@ -112,8 +112,8 @@ DEEPSTREAM_CHANNEL_ID=<private channel id>
       both, but verify before going live
 - [ ] Production KYC submitted; `CASHFREE_ENV=production` after activation
 
-> **Billing note:** Cashfree's auto-recurring e-mandate subscriptions are
-> INR-only. The USD Pro tier is sold as a monthly order — each successful
-> payment grants 30 days via a fresh invite link, and renewals are new orders
-> from the same customer. Switch to INR (₹2,499/mo) to use native Cashfree
-> subscriptions with UPI AutoPay / eNACH.
+> **Billing note:** the Pro tier is sold in INR (₹2,499/mo) as a monthly
+> order — each successful payment grants 30 days via a fresh invite link, and
+> renewals are new orders from the same customer. Since billing is already
+> INR, a future upgrade can adopt Cashfree's native auto-recurring
+> subscriptions (UPI AutoPay / eNACH).

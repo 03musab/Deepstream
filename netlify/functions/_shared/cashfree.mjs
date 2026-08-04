@@ -129,8 +129,8 @@ export function paymentsConfig() {
   return {
     configured: Boolean(env("CASHFREE_CLIENT_ID") && env("CASHFREE_CLIENT_SECRET")),
     mode: env("CASHFREE_ENV", "sandbox").toLowerCase(),
-    amount: Number(env("CASHFREE_ORDER_AMOUNT", "29")),
-    currency: env("CASHFREE_ORDER_CURRENCY", "USD"),
+    amount: Number(env("CASHFREE_ORDER_AMOUNT", "2499")),
+    currency: env("CASHFREE_ORDER_CURRENCY", "INR"),
   };
 }
 
@@ -271,8 +271,8 @@ export async function handleWebhookEvent(event) {
       await saveState(state);
       return `rejected ${type} (order not PAID)`;
     }
-    const expectedAmount = Number(env("CASHFREE_ORDER_AMOUNT", "29"));
-    const expectedCurrency = env("CASHFREE_ORDER_CURRENCY", "USD");
+    const expectedAmount = Number(env("CASHFREE_ORDER_AMOUNT", "2499"));
+    const expectedCurrency = env("CASHFREE_ORDER_CURRENCY", "INR");
     if (Number(fetched.order_amount) !== expectedAmount) {
       state.processed_events[eventId] = occurredAt;
       await saveState(state);

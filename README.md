@@ -115,7 +115,7 @@ The code is complete; the remaining work is **account/credential setup and go-li
 - [ ] **First weekly run** — `./run_weekly.sh` (or the GitHub Actions schedule) and confirm delivery to both channels.
 
 ### Optional future work
-- Switch to **INR (₹2,499/mo)** to use Cashfree's native auto-recurring subscriptions (UPI AutoPay / eNACH) — the current USD tier is billed as a monthly order with fresh invite links per renewal.
+- **Billing note:** the Pro tier is billed in **INR (₹2,499/mo)** as a monthly order — each successful payment grants 30 days via a fresh invite link. Since billing is INR, Cashfree's native auto-recurring subscriptions (UPI AutoPay / eNACH) are available as a future upgrade from the current monthly-order flow.
 - Add edge-level (CDN/WAF) rate limiting in front of the Netlify Functions (in-memory limiter is best-effort per warm instance).
 - Expand beyond the 3 monitored pairs as new ocean datasets become available.
 
@@ -184,7 +184,7 @@ cp .env.example .env     # then fill in your values (see below)
 | `CASHFREE_ENV` | `sandbox` (default) or `production` |
 | `CASHFREE_API_VERSION` | API version, default `2023-08-01` |
 | `CASHFREE_WEBHOOK_SECRET` | Secret from the Cashfree webhook config |
-| `CASHFREE_ORDER_AMOUNT` / `CASHFREE_ORDER_CURRENCY` | Price per Pro month (default `29` / `USD`) |
+| `CASHFREE_ORDER_AMOUNT` / `CASHFREE_ORDER_CURRENCY` | Price per Pro month (default `2499` / `INR`) |
 | `CASHFREE_SITE_URL` | Deployed site URL (used as the checkout return URL) |
 
 ---
