@@ -377,10 +377,17 @@ function setCheckoutStatus(msg, isError = false) {
 
 async function startCheckout() {
   const email = ($("co-email").value || "").trim();
-  const phone = ($("co-phone").value || "").trim();
+  // Cashfree requires a valid 10-15 digit phone number to create an order.
+  // Normalize (digits only) and validate here so the provider is never hit
+  // with an empty/malformed number (which Cashfree rejects generically).
+  const phone = ($("co-phone").value || "").replace(/\D/g, "");
   const submit = $("co-submit");
   if (!/^\S+@\S+\.\S+$/.test(email)) {
     setCheckoutStatus("Please enter a valid email.", true);
+    return;
+  }
+  if (phone.length < 10 || phone.length > 15) {
+    setCheckoutStatus("Please enter a valid phone number (10-15 digits) — it is required to create your order.", true);
     return;
   }
   submit.disabled = true;
@@ -395,7 +402,7 @@ async function startCheckout() {
     if (!res.ok || !order.payment_session_id) {
       // Surface the provider's real error (e.g. "api Request Failed") when the
       // backend includes it, instead of a bare "order creation failed".
-      throw new Error(order.detail || "order creation failed");
+      throw new Error(order.detail || order.details || "order creation failed");
     }
     // Remember the order id so success.html can poll even if the redirect
     // drops the query parameter.

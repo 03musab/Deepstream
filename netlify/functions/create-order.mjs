@@ -9,6 +9,7 @@ import {
   cashfreeRequest,
   env,
   json,
+  normalizePhone,
   rateLimited,
   validEmail,
 } from "./_shared/cashfree.mjs";
@@ -29,12 +30,15 @@ export default async (req) => {
   }
 
   const customerEmail = String(payload.customer_email || "").trim();
-  const customerPhone = String(payload.customer_phone || "").trim();
+  const customerPhone = normalizePhone(payload.customer_phone);
   if (!validEmail(customerEmail)) {
     return json({ error: "customer_email required" }, 400, req);
   }
-  if (customerPhone.length > 20) {
-    return json({ error: "customer_phone invalid" }, 400, req);
+  // Cashfree's Create Order API requires a valid 10-15 digit phone number.
+  // Reject empty/malformed values here instead of letting the provider return
+  // its generic "api Request Failed" for every missing-phone checkout.
+  if (!customerPhone) {
+    return json({ error: "customer_phone required (10-15 digits)" }, 400, req);
   }
 
   const orderId = "ds_" + randomUUID().replace(/-/g, "").slice(0, 16);
@@ -65,7 +69,12 @@ export default async (req) => {
   } catch (err) {
     console.error("Create order failed", err);
     return json(
-      { error: "order creation failed", detail: (err && err.message) || "" },
+      {
+        error: "order creation failed",
+        detail: (err && err.message) || "",
+        code: (err && err.code) || "",
+        details: (err && err.details) || "",
+      },
       502,
       req,
     );

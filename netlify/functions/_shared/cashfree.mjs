@@ -59,6 +59,19 @@ export const validEmail = (value) =>
 export const validOrderId = (value) =>
   typeof value === "string" && value.length <= 64 && ORDER_ID_RE.test(value);
 
+export const PHONE_DIGITS_RE = /^\d{10,15}$/;
+
+// Normalize a phone number to the digit-only form Cashfree's Create Order API
+// accepts (10-15 digits, country code optional). Returns "" when invalid so
+// callers can reject the request before it ever reaches the provider — an
+// empty or malformed phone is one of the most common causes of Cashfree's
+// generic "api Request Failed" rejection.
+export const normalizePhone = (value) => {
+  const raw = String(value || "").trim();
+  const digits = raw.replace(/\D/g, "");
+  return PHONE_DIGITS_RE.test(digits) ? digits : "";
+};
+
 // ---------------------------------------------------------------------------
 // Best-effort in-memory burst limiter (per warm instance). Production should
 // add an edge-level (CDN/WAF) rate limit in front of the functions too.
@@ -111,11 +124,14 @@ export async function cashfreeRequest(method, path, payload) {
   if (!res.ok) {
     // Preserve the provider's real error message so the caller can surface it
     // (e.g. "api Request Failed" when the merchant sandbox rejects the order).
+    // Also carry code/details/reason so the true cause is never lost.
+    const detail = (body && (body.details || body.reason)) || "";
     const err = new Error(
       (body && body.message) || `Cashfree ${method} ${path} failed: ${res.status}`
     );
     err.code = (body && body.code) || "";
     err.status = res.status;
+    err.details = typeof detail === "string" ? detail : JSON.stringify(detail);
     throw err;
   }
   return body;

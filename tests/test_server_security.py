@@ -135,6 +135,32 @@ class TestInputValidation(ServerTestCase):
         )
         self.assertEqual(status, 400)
 
+    def test_create_order_rejects_missing_phone(self):
+        """Cashfree requires a phone — an empty one must fail with 400."""
+        status, _, body = self.request(
+            "POST", "/api/create-order",
+            body=json.dumps({"customer_email": "ok@example.com"}),
+            headers={"Content-Type": "application/json"},
+        )
+        self.assertEqual(status, 400)
+        self.assertIn("customer_phone", json.loads(body)["error"])
+
+    def test_create_order_normalizes_phone_formatting(self):
+        """Spaces/plus/dashes in the phone are stripped before validation."""
+        with mock.patch("deepstream.server.create_cashfree_order") as mock_create:
+            mock_create.return_value = {"order_id": "ds_x",
+                                        "payment_session_id": "s",
+                                        "order_status": "ACTIVE"}
+            status, _, body = self.request(
+                "POST", "/api/create-order",
+                body=json.dumps({"customer_email": "ok@example.com",
+                                 "customer_phone": "+91 98765-43210"}),
+                headers={"Content-Type": "application/json"},
+            )
+            self.assertEqual(status, 200)
+            phone = mock_create.call_args[0][1]
+            self.assertEqual(phone, "919876543210")
+
     def test_access_rejects_invalid_order_id(self):
         status, _, _ = self.request("GET", "/api/access?order_id=../../../etc/passwd")
         self.assertEqual(status, 400)
@@ -160,7 +186,8 @@ class TestCreateOrderErrors(ServerTestCase):
         """502 from Cashfree must surface the provider's real message."""
         status, _, body = self.request(
             "POST", "/api/create-order",
-            body=json.dumps({"customer_email": "ok@example.com"}),
+            body=json.dumps({"customer_email": "ok@example.com",
+                             "customer_phone": "9876543210"}),
             headers={"Content-Type": "application/json"},
         )
         self.assertEqual(status, 502)
@@ -176,7 +203,8 @@ class TestCreateOrderErrors(ServerTestCase):
         """Non-provider failures must not leak internals to the client."""
         status, _, body = self.request(
             "POST", "/api/create-order",
-            body=json.dumps({"customer_email": "ok@example.com"}),
+            body=json.dumps({"customer_email": "ok@example.com",
+                             "customer_phone": "9876543210"}),
             headers={"Content-Type": "application/json"},
         )
         self.assertEqual(status, 502)

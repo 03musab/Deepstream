@@ -36,6 +36,16 @@ MAX_BODY_BYTES = 1_048_576  # 1 MiB
 EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 ORDER_ID_RE = re.compile(r"^ds_[0-9a-f]{16}$")
 
+# Cashfree's Create Order API requires a valid 10-15 digit phone number.
+# We normalize to digits-only and reject anything else before the request is
+# ever sent to the provider (an empty/malformed phone is a common cause of
+# Cashfree's generic "api Request Failed" rejection).
+PHONE_DIGITS_RE = re.compile(r"^\d{10,15}$")
+
+
+def _normalize_phone(value: str) -> str:
+    return re.sub(r"\D", "", value or "")
+
 # Simple in-memory sliding-window rate limiter, keyed by client IP. This is a
 # best-effort guard for the local dev backend; production should add an
 # edge-level (CDN/WAF) rate limit in front of the Netlify Functions.
@@ -176,12 +186,14 @@ class DeepstreamHandler(http.server.SimpleHTTPRequestHandler):
             self._serve_json_obj({"error": "invalid body"}, status=400)
             return
         customer_email = (payload.get("customer_email") or "").strip()
-        customer_phone = (payload.get("customer_phone") or "").strip()
+        customer_phone = _normalize_phone(payload.get("customer_phone") or "")
         if not customer_email or len(customer_email) > 254 or not EMAIL_RE.match(customer_email):
             self._serve_json_obj({"error": "customer_email required"}, status=400)
             return
-        if len(customer_phone) > 20:
-            self._serve_json_obj({"error": "customer_phone invalid"}, status=400)
+        if not PHONE_DIGITS_RE.match(customer_phone):
+            self._serve_json_obj(
+                {"error": "customer_phone required (10-15 digits)"}, status=400
+            )
             return
         try:
             order = create_cashfree_order(customer_email, customer_phone)

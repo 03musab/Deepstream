@@ -440,8 +440,8 @@
         <input id="co-email" type="email" autocomplete="email" placeholder="you@example.com" required>
       </div>
       <div class="form-row checkout-row">
-        <label for="co-phone">Phone <span class="opt">(optional)</span></label>
-        <input id="co-phone" type="tel" autocomplete="tel" placeholder="+91 98765 43210">
+        <label for="co-phone">Phone</label>
+        <input id="co-phone" type="tel" autocomplete="tel" inputmode="tel" pattern="[0-9+\s-]{10,20}" placeholder="98765 43210" required>
       </div>
       <button class="btn btn-primary checkout-submit" id="co-submit">Pay ₹2,499 — Subscribe</button>
       <p class="checkout-status" id="co-status" role="status"></p>
