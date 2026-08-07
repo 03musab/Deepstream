@@ -1,0 +1,22 @@
+{
+  "entries": [
+    {
+      "date": "2026-08-03",
+      "tag": "signal",
+      "title": "Weekly signal published — Atlantic Chlorophyll → Tuna SHORT",
+      "body": "One active setup this week: SHORT Tuna (entry 12.84, stop 13.48, target 11.81) at HIGH confidence with r = -0.775. Full track record refreshed to 362 trades."
+    },
+    {
+      "date": "2026-07-31",
+      "tag": "fix",
+      "title": "Payment flow hardening",
+      "body": "Webhook signature verification now tolerates both body-only and timestamp+body signature variants. Order-creation errors surface the provider's real reason for faster diagnosis."
+    },
+    {
+      "date": "2026-07-31",
+      "tag": "feat",
+      "title": "Track record published trade-by-trade",
+      "body": "The walk-forward, out-of-sample performance history is now published on the site with full methodology disclosure — every entry, stop, target, and outcome."
+    }
+  ]
+}

@@ -1,4 +1,4 @@
-// Deepstream - Pre-cached Historical Datasets (2021-2026)
+// Deepstream - Pre-cached Historical Datasets (2006-2026)
 const NEPTUNE_DATA_STORE = {
   "sst": [
     {

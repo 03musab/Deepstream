@@ -23,9 +23,13 @@ if [ -f .env ]; then
 fi
 
 EXTRA_ARGS="${1:-}"
-if [ "$EXTRA_ARGS" = "--skip-pipeline" ]; then
-    EXTRA_ARGS="--skip-pipeline"
-fi
+case "$EXTRA_ARGS" in
+  ""|"--skip-pipeline") ;;
+  *)
+    echo "Unknown argument: $EXTRA_ARGS (supported: --skip-pipeline)" >&2
+    exit 1
+    ;;
+esac
 
 # Pick a working Python interpreter (Windows Git Bash: `python`; POSIX: `python3`).
 if command -v python >/dev/null 2>&1; then
@@ -39,7 +43,7 @@ fi
 
 echo "=== Deepstream weekly run: $(date -u +%Y-%m-%dT%H:%M:%SZ) ==="
 
-"$PYTHON_BIN" -m deepstream run $EXTRA_ARGS
+"$PYTHON_BIN" -m deepstream run ${EXTRA_ARGS:+"$EXTRA_ARGS"}
 
 # Deliver to Telegram (no-op if credentials are unset).
 "$PYTHON_BIN" -m deepstream.telegram

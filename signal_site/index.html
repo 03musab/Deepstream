@@ -3,11 +3,101 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Deepstream converts oceanographic data into statistically validated commodity trade signals using walk-forward, out-of-sample methodology. Copper, tuna, and crude oil.">
-  <title>Deepstream — The Ocean Pricer</title>
+  <title>Deepstream — The Ocean Pricer | Ocean-Data Commodity Signals</title>
+  <meta name="description" content="Deepstream converts oceanographic data into statistically validated commodity trade signals using walk-forward, out-of-sample methodology. Copper, tuna, and crude oil setups published weekly.">
+  <meta name="keywords" content="commodity signals, ocean data trading, El Niño copper, chlorophyll tuna, crude oil signals, walk-forward backtest, quant research">
+  <meta name="robots" content="index, follow">
+  <meta name="author" content="Deepstream">
+  <link rel="canonical" href="https://deepstreamofficial.netlify.app/">
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Deepstream">
+  <meta property="og:title" content="Deepstream — The Ocean Pricer">
+  <meta property="og:description" content="Statistically validated commodity trade signals derived from oceanographic data. Walk-forward, out-of-sample — no lookahead bias.">
+  <meta property="og:url" content="https://deepstreamofficial.netlify.app/">
+  <meta property="og:image" content="https://deepstreamofficial.netlify.app/og-cover.png">
+
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Deepstream — The Ocean Pricer">
+  <meta name="twitter:description" content="Statistically validated commodity trade signals derived from oceanographic data. Walk-forward, out-of-sample — no lookahead bias.">
+  <meta name="twitter:image" content="https://deepstreamofficial.netlify.app/og-cover.png">
+
+  <!-- Structured data -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Organization",
+        "name": "Deepstream",
+        "url": "https://deepstreamofficial.netlify.app/",
+        "description": "Ocean-data commodity signal platform. Converts sea-surface temperature, chlorophyll, and chemical plume data into statistically validated weekly trade setups.",
+        "sameAs": ["https://t.me/deepstream_public"]
+      },
+      {
+        "@type": "WebSite",
+        "name": "Deepstream",
+        "url": "https://deepstreamofficial.netlify.app/",
+        "potentialAction": {
+          "@type": "SearchAction",
+          "target": "https://deepstreamofficial.netlify.app/#signals",
+          "query-input": "none"
+        }
+      },
+      {
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "Is this financial advice?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "No. Deepstream is a quantitative research service. Signals are informational and educational. You are solely responsible for your own trading decisions."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Why would the ocean predict commodities?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Physical systems precede markets. El Niño alters rainfall around South American copper mines; chlorophyll collapses signal nutrient disruption that constrains tuna catch; subsea plumes flag energy infrastructure stress. Markets price these events in after physical data — Deepstream aims to lead."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "How is the track record computed?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Walk-forward replay. For each historical signal date we use only the data available up to that date, generate the exact setup a subscriber would receive, then follow the trade forward until the stop or target is hit, or 60 days pass."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "How do I receive the signals?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Via a private Telegram channel. Free subscribers get the weekly summary on the public channel; Pro subscribers receive full setups with entry, stop, and target."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "What if there are no high-confidence signals?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "We say so. Standing aside is a position. Deepstream never fabricates a setup to justify a subscription."
+            }
+          }
+        ]
+      }
+    ]
+  }
+  </script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -407,6 +497,17 @@
           <a href="terms.html">Terms of use</a>
           <a href="privacy.html">Privacy policy</a>
           <a href="refunds.html">Refund policy</a>
+          <a href="changelog.html">Changelog</a>
+        </div>
+        <div class="footer-col">
+          <h4>Newsletter</h4>
+          <p class="footer-tagline">Weekly signal digest. No spam, unsubscribe anytime.</p>
+          <form class="newsletter-form" name="newsletter" method="POST" data-netlify="true" netlify-honeypot="bot-field">
+            <input type="hidden" name="form-name" value="newsletter">
+            <p class="hidden-field"><label>Don't fill this out if you're human: <input name="bot-field"></label></p>
+            <input type="email" name="email" placeholder="you@example.com" aria-label="Email address" required>
+            <button type="submit" class="btn btn-primary btn-sm">Subscribe</button>
+          </form>
         </div>
       </div>
       <div class="disclaimer">
@@ -419,7 +520,7 @@
           Simulated results do not reflect actual execution, slippage, commissions, or
           financing costs. You are solely responsible for your own trading decisions.
         </p>
-        <p class="copy">&copy; 2026 Deepstream. All rights reserved.</p>
+        <p class="copy">&copy; 2026 Deepstream. All rights reserved. <a href="changelog.html" style="color:var(--text-faint)">Changelog</a></p>
       </div>
     </div>
   </footer>

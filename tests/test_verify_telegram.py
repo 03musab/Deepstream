@@ -8,7 +8,7 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
-import verify_telegram
+from scripts import verify_telegram
 from deepstream import config
 
 # The real function, captured before setUp replaces it with a mock.
@@ -64,7 +64,7 @@ class TestVerifyTelegram(unittest.TestCase):
         os.environ.update(self._env)
         verify_telegram.load_dotenv = _REAL_LOAD_DOTENV
 
-    @mock.patch("verify_telegram.telegram_api_call")
+    @mock.patch("scripts.verify_telegram.telegram_api_call")
     def test_all_checks_pass(self, mock_api):
         mock_api.side_effect = _fake_api()
         rc, out = _run()
@@ -74,7 +74,7 @@ class TestVerifyTelegram(unittest.TestCase):
         self.assertIn("administrator of Pro channel", out)
         self.assertIn("Invite-link permission", out)
 
-    @mock.patch("verify_telegram.telegram_api_call")
+    @mock.patch("scripts.verify_telegram.telegram_api_call")
     def test_missing_token_fails_fast(self, mock_api):
         os.environ.pop(config.TELEGRAM_TOKEN_ENV, None)
         rc, out = _run()
@@ -82,28 +82,28 @@ class TestVerifyTelegram(unittest.TestCase):
         self.assertIn("not set", out)
         mock_api.assert_not_called()
 
-    @mock.patch("verify_telegram.telegram_api_call")
+    @mock.patch("scripts.verify_telegram.telegram_api_call")
     def test_invalid_token_fails(self, mock_api):
         mock_api.side_effect = _fake_api(me_ok=False)
         rc, out = _run()
         self.assertEqual(rc, 1)
         self.assertIn("rejected the token", out)
 
-    @mock.patch("verify_telegram.telegram_api_call")
+    @mock.patch("scripts.verify_telegram.telegram_api_call")
     def test_bot_not_admin_fails(self, mock_api):
         mock_api.side_effect = _fake_api(member_status="member")
         rc, out = _run()
         self.assertEqual(rc, 1)
         self.assertIn("must be an administrator", out)
 
-    @mock.patch("verify_telegram.telegram_api_call")
+    @mock.patch("scripts.verify_telegram.telegram_api_call")
     def test_missing_invite_permission_fails(self, mock_api):
         mock_api.side_effect = _fake_api(can_invite=False)
         rc, out = _run()
         self.assertEqual(rc, 1)
         self.assertIn("Invite users via link", out)
 
-    @mock.patch("verify_telegram.telegram_api_call")
+    @mock.patch("scripts.verify_telegram.telegram_api_call")
     def test_test_invite_round_trip(self, mock_api):
         mock_api.side_effect = _fake_api()
         rc, out = _run(["--test-invite"])
@@ -114,14 +114,14 @@ class TestVerifyTelegram(unittest.TestCase):
         self.assertIn("createChatInviteLink", methods)
         self.assertIn("revokeChatInviteLink", methods)
 
-    @mock.patch("verify_telegram.telegram_api_call")
+    @mock.patch("scripts.verify_telegram.telegram_api_call")
     def test_test_invite_fails_without_permission(self, mock_api):
         mock_api.side_effect = _fake_api(invite_ok=False)
         rc, out = _run(["--test-invite"])
         self.assertEqual(rc, 1)
         self.assertIn("createChatInviteLink rejected", out)
 
-    @mock.patch("verify_telegram.telegram_api_call")
+    @mock.patch("scripts.verify_telegram.telegram_api_call")
     def test_missing_pro_channel_warns(self, mock_api):
         os.environ.pop(config.PRO_CHANNEL_ENV, None)
         mock_api.side_effect = _fake_api()

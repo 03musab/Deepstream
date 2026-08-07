@@ -28,10 +28,10 @@ from deepstream.track_record import generate_track_record
 logger = setup_logging()
 
 
-def _run_step(name: str, script: str) -> bool:
+def _run_step(name: str, script: Path) -> bool:
     logger.info("Running %s (%s)", name, script)
     result = subprocess.run(
-        [sys.executable, script], capture_output=True, text=True
+        [sys.executable, str(script)], capture_output=True, text=True
     )
     if result.returncode != 0:
         logger.warning(
@@ -44,10 +44,13 @@ def _run_step(name: str, script: str) -> bool:
 
 
 def _run_pipeline() -> bool:
+    # Research/ops scripts live under scripts/ and are invoked from the repo
+    # root (relative paths inside them assume the repo root as CWD).
+    scripts_dir = Path(__file__).resolve().parent.parent / "scripts"
     steps = [
-        ("Data fetch", "fetch_data.py"),
-        ("Parameter optimization", "quant_optimizer.py"),
-        ("Backtest engine", "run_backtests.py"),
+        ("Data fetch", scripts_dir / "fetch_data.py"),
+        ("Parameter optimization", scripts_dir / "quant_optimizer.py"),
+        ("Backtest engine", scripts_dir / "run_backtests.py"),
     ]
     ok = all(_run_step(name, script) for name, script in steps)
     if not ok:

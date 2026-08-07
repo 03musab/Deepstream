@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DEEPSTREAM // Ocean Intelligence Terminal</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23050811'/%3E%3Cpath d='M5 20c4-4.5 8-4.5 11 0s7 4.5 11 0' stroke='%2300f2fe' stroke-width='2' stroke-linecap='round' fill='none'/%3E%3Cpath d='M5 13c4-4.5 8-4.5 11 0s7 4.5 11 0' stroke='%2300f2fe' stroke-width='2' stroke-linecap='round' fill='none' opacity='0.5'/%3E%3C/svg%3E">
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -16,9 +17,10 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+    <a class="skip-link" href="#main-content">Skip to main content</a>
     <div class="app-container">
         <!-- Sidebar Navigation -->
-        <aside class="sidebar">
+        <aside class="sidebar" id="sidebar" aria-label="Primary">
             <div class="logo-area">
                 <div class="logo-icon"></div>
                 <div class="logo-text">
@@ -27,7 +29,10 @@
                 </div>
             </div>
             
-            <nav class="nav-menu">
+            <button class="menu-toggle" id="menu-toggle" aria-label="Close navigation" aria-expanded="false">
+                <i data-lucide="x"></i>
+            </button>
+            <nav class="nav-menu" aria-label="Sections">
                 <a href="#" class="nav-item active" data-tab="terminal">
                     <i data-lucide="terminal"></i>
                     <span>Live Terminal</span>
@@ -52,23 +57,26 @@
         </aside>
 
         <!-- Main Workspace -->
-        <main class="main-content">
+        <main class="main-content" id="main-content">
             <!-- Header Bar -->
             <header class="top-header">
                 <div class="header-title-group">
+                    <button class="menu-toggle menu-toggle-open" id="menu-toggle-open" aria-label="Open navigation" aria-expanded="false">
+                        <i data-lucide="menu"></i>
+                    </button>
                     <span class="confidential-badge">CONFIDENTIAL</span>
                     <h1 class="header-title" id="page-title">Operations Console</h1>
                 </div>
                 <div class="header-controls">
-                    <button id="play-demo-btn" class="control-widget text-glow" style="cursor: pointer; background: rgba(0, 242, 254, 0.1); border-color: var(--color-cyan); font-weight: 600; display: flex; align-items: center; gap: 8px; outline: none; transition: var(--transition-smooth);">
-                        <i data-lucide="play" style="width: 14px; height: 14px; color: var(--color-cyan);"></i>
-                        <span style="color: var(--color-cyan);">Play Animated Demo</span>
+                    <button id="play-demo-btn" class="btn btn-cyan">
+                        <i data-lucide="play"></i>
+                        <span>Play Animated Demo</span>
                     </button>
                     <div class="control-widget">
                         <i data-lucide="clock"></i>
                         <span id="live-clock">12:00:00 UTC</span>
                     </div>
-                    <div class="control-widget">
+                    <div class="control-widget control-widget-hide-mobile">
                         <i data-lucide="database"></i>
                         <span>Copernicus CMEMS // NASA MODIS</span>
                     </div>
@@ -98,27 +106,27 @@
                                 <path d="M850,380 L920,350 L950,400 L880,420 Z" class="continent" />
                                 
                                 <!-- Zone Markers -->
-                                <g class="zone-marker" id="zone-alpha" data-zone="Alpha">
+                                <g class="zone-marker" id="zone-alpha" data-zone="Alpha" role="button" tabindex="0" aria-label="Target zone Alpha (ENSO)">
                                     <circle cx="280" cy="220" r="25" class="zone-glow" />
                                     <circle cx="280" cy="220" r="6" class="zone-dot" />
                                     <text x="295" y="225" class="zone-label">ALPHA (ENSO)</text>
                                 </g>
-                                <g class="zone-marker" id="zone-beta" data-zone="Beta">
+                                <g class="zone-marker" id="zone-beta" data-zone="Beta" role="button" tabindex="0" aria-label="Target zone Beta (Gulf of Mexico)">
                                     <circle cx="220" cy="180" r="25" class="zone-glow" />
                                     <circle cx="220" cy="180" r="6" class="zone-dot" />
                                     <text x="235" y="185" class="zone-label">BETA (GoM)</text>
                                 </g>
-                                <g class="zone-marker" id="zone-gamma" data-zone="Gamma">
+                                <g class="zone-marker" id="zone-gamma" data-zone="Gamma" role="button" tabindex="0" aria-label="Target zone Gamma (Atlantic)">
                                     <circle cx="450" cy="120" r="25" class="zone-glow" />
                                     <circle cx="450" cy="120" r="6" class="zone-dot" />
                                     <text x="465" y="125" class="zone-label">GAMMA (Atlantic)</text>
                                 </g>
-                                <g class="zone-marker" id="zone-delta" data-zone="Delta">
+                                <g class="zone-marker" id="zone-delta" data-zone="Delta" role="button" tabindex="0" aria-label="Target zone Delta (Indian Ocean)">
                                     <circle cx="680" cy="260" r="25" class="zone-glow" />
                                     <circle cx="680" cy="260" r="6" class="zone-dot" />
                                     <text x="695" y="265" class="zone-label">DELTA (Indian)</text>
                                 </g>
-                                <g class="zone-marker" id="zone-epsilon" data-zone="Epsilon">
+                                <g class="zone-marker" id="zone-epsilon" data-zone="Epsilon" role="button" tabindex="0" aria-label="Target zone Epsilon (Arctic)">
                                     <circle cx="520" cy="50" r="25" class="zone-glow" />
                                     <circle cx="520" cy="50" r="6" class="zone-dot" />
                                     <text x="535" y="55" class="zone-label">EPSILON (Arctic)</text>
@@ -160,6 +168,10 @@
                         </div>
                     </div>
                     <div class="chart-wrapper">
+                        <div class="chart-loading" id="chart-loading" role="status" aria-live="polite">
+                            <div class="spinner"></div>
+                            <span>Recalculating correlation…</span>
+                        </div>
                         <canvas id="forecastChart"></canvas>
                     </div>
                     <div class="lag-slider-container" style="padding: 12px 20px; display: flex; flex-direction: column; gap: 8px; border-top: 1px solid rgba(255, 255, 255, 0.05); background: rgba(5, 8, 17, 0.2);">
@@ -194,7 +206,7 @@
                         </div>
                         <span class="console-timestamp" id="console-time">SECURE FEED</span>
                     </div>
-                    <div class="console-log" id="console-log">
+                    <div class="console-log" id="console-log" aria-live="polite" aria-relevant="additions">
                         <div class="log-line system">[SYS] Terminal Initialized. Ready for data streaming...</div>
                         <div class="log-line system">[SYS] Establishing Iridium satellite uplink to Singapore center...</div>
                         <div class="log-line success">[UPLINK] Connected. Latency: 42ms. Data buffer clean.</div>
@@ -234,16 +246,24 @@
         </main>
     </div>
     <!-- Floating Demo Tour Callout Overlay -->
-    <div id="demo-tour-callout" style="position: fixed; bottom: 30px; right: 30px; background: rgba(8, 12, 24, 0.95); border: 1.5px solid var(--color-cyan); padding: 20px; border-radius: 12px; width: 350px; box-shadow: 0 0 25px rgba(0, 242, 254, 0.25); backdrop-filter: blur(15px); z-index: 9999; display: none; flex-direction: column; gap: 12px; transition: all 0.4s ease; transform: translateY(20px); opacity: 0;">
-        <div style="display: flex; align-items: center; gap: 12px; border-bottom: 1px solid rgba(0, 242, 254, 0.2); padding-bottom: 8px;">
-            <i data-lucide="info" style="width: 18px; height: 18px; color: var(--color-cyan);"></i>
-            <h3 style="font-family: var(--font-header); font-size: 14px; font-weight: 700; color: var(--text-primary); letter-spacing: 0.5px;">DEMO ANIMATION TOUR</h3>
+    <div id="demo-tour-callout" class="demo-callout" role="dialog" aria-label="Demo animation tour">
+        <div class="demo-callout-head">
+            <i data-lucide="info"></i>
+            <h3>DEMO ANIMATION TOUR</h3>
         </div>
-        <p id="demo-tour-text" style="font-size: 12.5px; color: var(--text-secondary); line-height: 1.6; min-height: 48px;"></p>
-        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 10px; color: var(--text-muted); margin-top: 8px;">
+        <p class="demo-callout-text" id="demo-tour-text"></p>
+        <div class="demo-callout-meta">
             <span id="demo-tour-progress">Step 1 of 5</span>
-            <span style="font-family: var(--font-mono); color: var(--color-cyan); letter-spacing: 1px;">ACTIVE MODE</span>
+            <span>ACTIVE MODE</span>
         </div>
+    </div>
+
+    <!-- Transient feedback toast -->
+    <div id="app-toast" class="toast" role="status" aria-live="polite"></div>
+
+    <div id="offline-banner" class="offline-banner hidden" role="alert">
+        <i data-lucide="cloud-off"></i>
+        <span>Offline mode — dataset unavailable. Rebuild <code>data-store.js</code> with <code>python scripts/convert_csv_to_js.py</code>.</span>
     </div>
 
     <script src="data-store.js"></script>

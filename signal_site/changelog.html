@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Deepstream product changelog — new features, fixes, and weekly signal publications.">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://deepstreamofficial.netlify.app/changelog.html">
+  <meta property="og:title" content="Changelog — Deepstream">
+  <meta property="og:description" content="New features, fixes, and weekly signal publications.">
+  <title>Changelog — Deepstream</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="container header-inner">
+      <a class="brand" href="/">
+        <svg class="brand-mark" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M3 16.5c3.5-4 7-4 10.5 0s7 4 10.5 0" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+          <path d="M3 12c3.5-4 7-4 10.5 0s7 4 10.5 0" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" opacity="0.55"/>
+          <path d="M3 7.5c3.5-4 7-4 10.5 0s7 4 10.5 0" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" opacity="0.25"/>
+        </svg>
+        <span class="brand-name">Deepstream</span>
+      </a>
+      <nav class="nav">
+        <a href="/#signals">Signals</a>
+        <a href="/#performance">Performance</a>
+        <a href="/#pricing">Pricing</a>
+      </nav>
+      <a class="btn btn-primary btn-sm" href="/#pricing">Subscribe</a>
+    </div>
+  </header>
+
+  <main>
+    <section class="page-hero">
+      <div class="container">
+        <p class="eyebrow">PRODUCT LOG</p>
+        <h1>Changelog</h1>
+        <p class="page-lede">What's new at Deepstream — features, fixes, and weekly signal publications.</p>
+      </div>
+    </section>
+
+    <section class="section section-alt">
+      <div class="container">
+        <div class="changelog-list" id="changelog-list">
+          <p class="table-note">Loading…</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div>
+          <div class="brand footer-brand">
+            <svg class="brand-mark" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M3 16.5c3.5-4 7-4 10.5 0s7 4 10.5 0" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+              <path d="M3 12c3.5-4 7-4 10.5 0s7 4 10.5 0" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" opacity="0.55"/>
+              <path d="M3 7.5c3.5-4 7-4 10.5 0s7 4 10.5 0" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" opacity="0.25"/>
+            </svg>
+            <span>Deepstream</span>
+          </div>
+          <p class="footer-tagline">Oceanographic data, translated into commodity signals.</p>
+        </div>
+        <div class="footer-col">
+          <h4>Platform</h4>
+          <a href="/#signals">Signals</a>
+          <a href="/#chart">Live data</a>
+          <a href="/#performance">Performance</a>
+          <a href="/#methodology">Methodology</a>
+        </div>
+        <div class="footer-col">
+          <h4>Company</h4>
+          <a href="contact.html">Contact</a>
+          <a href="terms.html">Terms of use</a>
+          <a href="privacy.html">Privacy policy</a>
+          <a href="refunds.html">Refund policy</a>
+        </div>
+      </div>
+      <div class="disclaimer">
+        <p>
+          <strong>Risk disclosure.</strong> Deepstream is a quantitative research service.
+          Signals are provided for informational and educational purposes only and do not
+          constitute investment advice. Commodity trading involves substantial risk of loss
+          and is not suitable for every investor.
+        </p>
+        <p class="copy">&copy; 2026 Deepstream. All rights reserved.</p>
+      </div>
+    </div>
+  </footer>
+
+  <style>
+    .page-hero { padding: 84px 0 40px; background: radial-gradient(900px 380px at 12% -8%, rgba(77, 163, 255, 0.10), transparent 60%); border-bottom: 1px solid var(--border-soft); }
+    .page-hero h1 { font-family: var(--font-display); font-weight: 500; font-size: clamp(2.2rem, 4vw, 3rem); margin-bottom: 10px; }
+    .page-lede { color: var(--text-dim); font-size: 1rem; }
+  </style>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const esc = (value) => String(value ?? "")
+      .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+
+    const TAG_CLASS = { feat: "feat", fix: "fix", signal: "signal" };
+
+    (async () => {
+      const list = $("changelog-list");
+      try {
+        const res = await fetch("/changelog.json", { cache: "no-store" });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        const entries = (data.entries || []).sort((a, b) => b.date.localeCompare(a.date));
+        if (!entries.length) {
+          list.innerHTML = `<p class="table-note">No entries yet.</p>`;
+          return;
+        }
+        list.innerHTML = entries.map((e) => `
+          <article class="changelog-entry">
+            <time>${esc(e.date)}</time>
+            <span class="changelog-tag ${TAG_CLASS[e.tag] || "feat"}">${esc(e.tag || "update")}</span>
+            <h3>${esc(e.title)}</h3>
+            <p>${esc(e.body)}</p>
+          </article>`).join("");
+      } catch (err) {
+        console.error("Failed to load changelog:", err);
+        list.innerHTML = `<p class="table-note">Changelog could not be loaded. Check back soon.</p>`;
+      }
+    })();
+  </script>
+
+</body>
+</html>

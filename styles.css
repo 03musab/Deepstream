@@ -699,3 +699,506 @@ body {
         transform: rotate(360deg);
     }
 }
+
+/* ===========================================================================
+   Production polish — accessibility, feedback states, responsive layout
+   =========================================================================== */
+
+/* Skip link (keyboard users) */
+.skip-link {
+    position: fixed;
+    top: -48px;
+    left: 16px;
+    z-index: 1000;
+    background: var(--color-cyan);
+    color: var(--bg-darker);
+    font-family: var(--font-header);
+    font-weight: 600;
+    padding: 10px 18px;
+    border-radius: 0 0 8px 8px;
+    transition: top 0.2s ease;
+}
+
+.skip-link:focus {
+    top: 0;
+}
+
+/* Visible keyboard focus everywhere */
+:focus-visible {
+    outline: 2px solid var(--color-cyan);
+    outline-offset: 2px;
+    border-radius: 4px;
+}
+
+/* Buttons — unified hierarchy */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--font-header);
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.4px;
+    padding: 10px 18px;
+    border-radius: 8px;
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: var(--transition-smooth);
+    background: transparent;
+    color: var(--text-primary);
+}
+
+.btn i {
+    width: 15px;
+    height: 15px;
+}
+
+.btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.btn-cyan {
+    background: rgba(0, 242, 254, 0.1);
+    border-color: var(--color-cyan);
+    color: var(--color-cyan);
+}
+
+.btn-cyan:hover:not(:disabled) {
+    background: rgba(0, 242, 254, 0.18);
+    box-shadow: var(--shadow-glow);
+    transform: translateY(-1px);
+}
+
+.btn-cyan:active:not(:disabled) {
+    transform: translateY(0);
+}
+
+/* Chart loading state */
+.chart-loading {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    background: rgba(5, 8, 17, 0.65);
+    backdrop-filter: blur(4px);
+    color: var(--text-secondary);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 1px;
+    z-index: 5;
+    transition: opacity 0.25s ease;
+}
+
+/* Hidden state uses opacity only (no display:none) so the fade transition
+   actually animates — the global .hidden utility would kill it. */
+.chart-loading.is-loading {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.spinner {
+    width: 26px;
+    height: 26px;
+    border: 2px solid rgba(0, 242, 254, 0.2);
+    border-top-color: var(--color-cyan);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Toast feedback */
+.toast {
+    position: fixed;
+    bottom: 28px;
+    left: 50%;
+    transform: translate(-50%, 20px);
+    background: rgba(8, 12, 24, 0.95);
+    border: 1px solid var(--border-hover);
+    color: var(--text-primary);
+    font-family: var(--font-header);
+    font-size: 13px;
+    padding: 12px 22px;
+    border-radius: 8px;
+    box-shadow: var(--shadow-heavy);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease, transform 0.25s ease;
+    z-index: 10000;
+    max-width: min(420px, calc(100vw - 40px));
+    text-align: center;
+}
+
+.toast.show {
+    opacity: 1;
+    transform: translate(-50%, 0);
+}
+
+/* Offline / empty-state banner */
+.offline-banner {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 9000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 10px 16px;
+    background: rgba(255, 179, 0, 0.12);
+    border-bottom: 1px solid var(--color-amber);
+    color: var(--color-amber);
+    font-size: 12.5px;
+    font-family: var(--font-header);
+    backdrop-filter: blur(10px);
+}
+
+.offline-banner i {
+    width: 16px;
+    height: 16px;
+    flex: none;
+}
+
+.offline-banner code {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    background: rgba(255, 255, 255, 0.08);
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+
+/* Demo tour callout (class-based, no inline styles) */
+.demo-callout {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    background: rgba(8, 12, 24, 0.95);
+    border: 1.5px solid var(--color-cyan);
+    padding: 20px;
+    border-radius: 12px;
+    width: 350px;
+    max-width: calc(100vw - 40px);
+    box-shadow: 0 0 25px rgba(0, 242, 254, 0.25);
+    backdrop-filter: blur(15px);
+    z-index: 9999;
+    display: none;
+    flex-direction: column;
+    gap: 12px;
+    transition: all 0.4s ease;
+    transform: translateY(20px);
+    opacity: 0;
+}
+
+.demo-callout.visible {
+    display: flex;
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.demo-callout-head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border-bottom: 1px solid rgba(0, 242, 254, 0.2);
+    padding-bottom: 8px;
+}
+
+.demo-callout-head i {
+    width: 18px;
+    height: 18px;
+    color: var(--color-cyan);
+}
+
+.demo-callout-head h3 {
+    font-family: var(--font-header);
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text-primary);
+    letter-spacing: 0.5px;
+}
+
+.demo-callout-text {
+    font-size: 12.5px;
+    color: var(--text-secondary);
+    line-height: 1.6;
+    min-height: 48px;
+}
+
+.demo-callout-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 10px;
+    color: var(--text-muted);
+    margin-top: 8px;
+}
+
+.demo-callout-meta span:last-child {
+    font-family: var(--font-mono);
+    color: var(--color-cyan);
+    letter-spacing: 1px;
+}
+
+/* Status badges */
+.badge {
+    display: inline-block;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    padding: 3px 9px;
+    border-radius: 4px;
+    border: 1px solid;
+    white-space: nowrap;
+}
+
+.badge-success {
+    background: rgba(0, 230, 118, 0.1);
+    color: var(--color-emerald);
+    border-color: var(--color-emerald);
+}
+
+.badge-cyan {
+    background: rgba(0, 242, 254, 0.1);
+    color: var(--color-cyan);
+    border-color: var(--color-cyan);
+}
+
+/* Data tables — hover + row polish (zones / modeler tabs) */
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+    font-size: 14px;
+}
+
+.data-table thead th {
+    padding: 12px;
+    border-bottom: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    font-family: var(--font-header);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+.data-table tbody td {
+    padding: 16px 12px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    color: var(--text-primary);
+}
+
+.data-table tbody tr {
+    transition: background 0.2s ease;
+}
+
+.data-table tbody tr:hover {
+    background: rgba(0, 242, 254, 0.03);
+}
+
+.data-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.data-table .mono {
+    font-family: var(--font-mono);
+}
+
+.table-scroll {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Menu toggle (hamburger) — hidden on desktop */
+.menu-toggle {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    background: var(--bg-panel);
+    color: var(--color-cyan);
+    cursor: pointer;
+}
+
+.menu-toggle i {
+    width: 18px;
+    height: 18px;
+}
+
+/* Respect users who prefer reduced motion */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+/* ===========================================================================
+   Responsive layout
+   =========================================================================== */
+
+@media (max-width: 1280px) {
+    .workspace-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .console-panel {
+        grid-column: span 2;
+    }
+}
+
+@media (max-width: 1024px) {
+    .control-widget-hide-mobile {
+        display: none;
+    }
+}
+
+@media (max-width: 860px) {
+    /* Sidebar becomes an off-canvas drawer */
+    .sidebar {
+        position: fixed;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        width: 264px;
+        transform: translateX(-105%);
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: var(--shadow-heavy);
+        z-index: 100;
+    }
+
+    body.nav-open .sidebar {
+        transform: translateX(0);
+    }
+
+    /* Dim the workspace behind the open drawer */
+    body.nav-open::after {
+        content: "";
+        position: fixed;
+        inset: 0;
+        background: rgba(3, 5, 10, 0.55);
+        z-index: 90;
+    }
+
+    .menu-toggle {
+        display: inline-flex;
+    }
+
+    .menu-toggle-open {
+        display: inline-flex;
+    }
+
+    .sidebar .menu-toggle {
+        position: absolute;
+        top: 16px;
+        right: 16px;
+    }
+
+    .main-content {
+        padding: 16px;
+    }
+
+    .top-header {
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+
+    .header-title-group {
+        flex-wrap: wrap;
+    }
+
+    .header-controls {
+        width: 100%;
+        justify-content: space-between;
+        flex-wrap: wrap;
+    }
+
+    .workspace-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .console-panel {
+        grid-column: auto;
+    }
+
+    .full-width-panel {
+        grid-column: auto;
+        padding: 16px;
+    }
+
+    .forecast-panel .panel-header {
+        align-items: flex-start;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .fleet-stats-grid,
+    .prediction-meta {
+        grid-template-columns: repeat(3, 1fr);
+    }
+
+    .demo-callout {
+        bottom: 16px;
+        right: 16px;
+        width: auto;
+    }
+}
+
+@media (max-width: 520px) {
+    .confidential-badge {
+        display: none;
+    }
+
+    .header-title {
+        font-size: 20px;
+    }
+
+    .fleet-stats-grid,
+    .prediction-meta {
+        grid-template-columns: 1fr;
+    }
+
+    .stat-card,
+    .meta-item {
+        border-right: none;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .stat-card:last-child,
+    .meta-item:last-child {
+        border-bottom: none;
+    }
+
+    .console-log {
+        max-height: 220px;
+    }
+
+    .demo-callout {
+        left: 16px;
+        right: 16px;
+        bottom: 16px;
+    }
+
+    .control-widget {
+        flex: 1;
+        justify-content: center;
+    }
+}
+

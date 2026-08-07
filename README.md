@@ -1,179 +1,127 @@
+<div align="center">
+
 # Deepstream
 
-**Ocean-data commodity signal platform.** Deepstream converts oceanographic indicators — sea-surface temperature, chlorophyll, and chemical plumes — into statistically validated weekly commodity trade setups (Copper, Tuna, Crude Oil), delivered via Telegram and monetized through a paid Pro tier.
+**The ocean moves commodities. We trade that signal.**
 
-The product is differentiated by **honest methodology**: signals are produced walk-forward (no lookahead bias), Granger-causality tested over 20 years of history, and an out-of-sample track record is published transparently on the landing site.
+Ocean-data commodity signal platform — converts sea-surface temperature,
+chlorophyll, and chemical-plume observations into statistically validated
+weekly commodity trade setups (Copper · Tuna · Crude Oil), delivered via
+Telegram and monetized through a paid Pro tier.
+
+![Python 3.12](https://img.shields.io/badge/Python-3.12-3776AB?logo=python&logoColor=white)
+![Tests](https://img.shields.io/badge/tests-67%20passing-3dd68c)
+![Deploy](https://img.shields.io/badge/deploy-Netlify-00C7B7?logo=netlify&logoColor=white)
+
+</div>
 
 ---
 
-## Current Status
+## Overview
+
+Deepstream turns physical oceanography into a trading edge. Instead of
+fitting models to price history, it tracks the *physical systems that
+precede markets*:
+
+- **El Niño / La Niña** (Pacific SST anomalies) disrupt rainfall around South
+  American copper mines → **Copper futures**, ~50-day lead.
+- **Chlorophyll collapses** (Atlantic) signal food-chain disruption →
+  **Tuna prices**, ~30-day lead.
+- **Subsea chemical plumes** (Gulf of Mexico) flag infrastructure stress →
+  **Crude oil**, traded as discrete event catalysts.
+
+The product is differentiated by **honest methodology**: signals are produced
+walk-forward (no lookahead bias), Granger-causality tested over 20 years of
+history, and an out-of-sample track record is published trade-by-trade on the
+landing site.
+
+> **Simulated results for educational purposes only** — they do not reflect
+> real execution, slippage, or costs.
+
+## Features
 
 | Area | Status |
 |------|--------|
-| Signal engine (3 asset pairs) | ✅ Implemented |
-| 20-year parameter optimization + econometric proofs | ✅ Implemented |
-| Walk-forward out-of-sample track record | ✅ Implemented |
-| Landing site with interactive charts | ✅ Implemented |
-| Telegram tiered delivery (public vs Pro) | ✅ Implemented |
-| Cashfree payment flow (orders, signed webhooks, invite links) | ✅ Implemented |
-| Security hardening (rate limits, CORS, headers, signature verification) | ✅ Implemented |
-| GitHub Actions weekly automation | ✅ Implemented |
-| Unit tests (60, all passing) | ✅ Passing |
-| Live payments + Telegram delivery configured | ⏳ Remaining (launch steps) |
+| Signal engine — 3 ocean → commodity pairs | ✅ |
+| 20-year parameter optimization + econometric proofs | ✅ |
+| Walk-forward, out-of-sample track record | ✅ |
+| Landing site with interactive charts & machine-readable JSON | ✅ |
+| Telegram tiered delivery (public summary vs Pro report) | ✅ |
+| Cashfree payment flow (orders, signed webhooks, invite links) | ✅ |
+| Security hardening (rate limits, CORS, headers, signature verification) | ✅ |
+| GitHub Actions weekly automation | ✅ |
+| Marketing automation (SEO, changelog, newsletter, content generator) | ✅ |
+| Unit tests — **67, all passing** | ✅ |
 
-### Latest track record (as of 2026-07-31)
+### Latest track record (2026-08-03)
+
 - **362** simulated trades over the last 5 years (walk-forward, out-of-sample)
 - **41.1%** win rate · **+140.5%** cumulative return · **+0.39%** avg return/trade
-- Latest signal: **1 ACTIVE trade** (Atlantic Chlorophyll → Tuna, HIGH confidence, SHORT 12.84 / SL 13.48 / TP 11.81)
+- Latest signal: **1 ACTIVE trade** — Atlantic Chlorophyll → Tuna, HIGH
+  confidence, SHORT 12.84 / SL 13.48 / TP 11.81
 
-> Simulated results for educational purposes only — they do not reflect real execution, slippage, or costs.
+## Tech stack
 
----
+- **Backend:** Python 3.12 (stdlib-only HTTP server + NumPy/Pandas/Scipy
+  analysis), config-driven `deepstream` package.
+- **Production backend:** Netlify Functions (Node 18+) + Netlify Blobs,
+  mirroring the Python payment logic.
+- **Frontend:** Vanilla JS + Chart.js, two surfaces — the deployed landing
+  site (`signal_site/`) and the operations console (`index.html`).
+- **Data:** NOAA CPC (SST indices), Yahoo Finance (futures), simulated
+  chlorophyll/plume series where no open API exists.
+- **Payments:** Cashfree Payment Gateway (₹2,499/month, INR).
+- **Delivery:** Telegram Bot API (public + private Pro channel, single-use
+  invite links).
+- **CI/CD:** GitHub Actions (weekly cron) → Netlify static deploy.
 
-## The Signal Pairs
-
-| # | Ocean Indicator | Commodity | Optimal Lag | Max \|r\| |
-|---|-----------------|-----------|:----------:|:-------:|
-| 1 | Pacific SST Anomaly (ENSO) | Copper Futures | 50 days | 0.38 |
-| 2 | Atlantic Chlorophyll | Tuna Price | 30 days | 0.99 |
-| 3 | GoM Chemical Plume | Crude Oil Futures | 110 days | 0.14* |
-
-\* Not continuously tradeable — oil seeps act as discrete event catalysts (cointegration unproven on a daily-returns basis).
-
-**Proven causalities** (Granger, p < 0.05): Pacific SST → Copper (50-day lead) and Atlantic Chlorophyll → Tuna (30-day lead). El Niño threshold events (> +1.0°C anomaly) show a +9.16% average 12-week forward return on Copper in event studies.
-
----
-
-## What Has Been Accomplished
-
-### 1. Quant research & validation
-- **20-year dataset (2006–2026)**: 7,450+ daily observations across 3 ocean/commodity pairs.
-- **Multicore parameter optimization** (`quant_optimizer.py`) sweeping smoothing windows and lag offsets to maximize absolute correlation.
-- **Institutional proofs** (`quant_econometrics.py`): Dickey-Fuller stationarity tests and VAR/Granger causality for every pair.
-- **Event studies**: threshold-based forward-return analysis (e.g., El Niño events).
-- Full research write-up in [`walkthrough.md`](walkthrough.md).
-
-### 2. Signal engine (`deepstream/signal_engine.py`)
-- Computes lagged Pearson correlation between ocean indicator and commodity price.
-- Grades confidence by absolute |r|: **HIGH ≥ 0.70, MEDIUM ≥ 0.40, LOW ≥ 0.20, NOISE**.
-- Only HIGH / MEDIUM emit tradeable setups with **entry / stop (5%) / target (8%)**.
-- Fully config-driven — thresholds, risk, and asset definitions live in `deepstream/config.py`.
-
-### 3. Honest track record (`deepstream/track_record.py`)
-- Replays the engine historically using **only data available at each signal date** — no lookahead bias.
-- Conservative outcome resolution (closing prices only, never intraday).
-- Published live on the site as `track_record.json` with full methodology disclosure.
-
-### 4. Landing site (`signal_site/`)
-- Premium landing page with interactive price/ocean charts, signal cards, and equity curve.
-- Static deployment target for Netlify (`netlify.toml`), legal pages (terms, privacy, refunds, contact), and `success.html` payment return page.
-- Machine-readable endpoints: `/latest_signal.json`, `/track_record.json`, `/chart_data.json`.
-
-### 5. Telegram delivery (`deepstream/telegram.py`)
-- **Public channel**: weekly summary — direction + confidence grades only, never levels.
-- **Pro channel**: full setups with entry / stop / target.
-- Either channel may be unset; delivery still succeeds.
-
-### 6. Payments — Cashfree (`deepstream/payments.py` + `netlify/functions/`)
-- `POST /api/create-order` → Cashfree order + `payment_session_id` for the hosted checkout.
-- **Signed webhooks** (`x-webhook-signature`, HMAC-SHA256) verified before any action; `ORDER_PAID` is re-checked against the Cashfree API (amount + currency) before granting.
-- On verified payment the bot mints a **single-use, 30-day Telegram invite link** to the private Pro channel, keyed by `order_id`.
-- Refunds / failed / cancelled orders revoke the link.
-- Success page polls `/api/access?order_id=...` until the invite appears.
-- **Two identical backends**: the local Python dev server and Netlify Functions (state in Netlify Blobs) mirror the same logic.
-
-### 7. Security hardening
-- Per-IP rate limiting, request body caps, server-side email/order-id validation.
-- CORS restricted to the configured site origin; security headers on every response.
-- Never exposes the Cashfree client secret to the browser.
-
-### 8. Automation & CI (`run_weekly.sh`, `.github/workflows/weekly.yml`)
-- GitHub Actions cron every **Monday 05:00 UTC** (or manual dispatch): install → run tests (gate) → generate signals + track record → deliver to Telegram → commit refreshed assets back to the repo → Netlify redeploys.
-- `./run_weekly.sh` for local runs (with `--skip-pipeline` for fast offline runs).
-
-### 9. Tooling & tests
-- `verify_telegram.py` — one-command health check of bot token, Pro-channel admin status, and invite-link permission (with `--test-invite` end-to-end proof).
-- `run_sandbox_e2e.py` — Cashfree sandbox end-to-end harness (`preflight` / `create` / `webhook` / `check` / `all`).
-- **60 unit tests** across signal engine, payments, server security, Telegram, and verification — all passing.
-
----
-
-## What's Left (Launch Steps)
-
-The code is complete; the remaining work is **account/credential setup and go-live validation**:
-
-### Go-live checklist
-- [ ] **Cashfree account** — sandbox keys work immediately; production requires KYC + ~24–48h activation.
-- [ ] **`.env` configured** — copy `.env.example` → `.env` and fill in all values (bot token, channel IDs, Cashfree keys, webhook secret, site URL). Set the same vars as Netlify environment variables.
-- [ ] **Private Pro Telegram channel** — create it, add the bot as admin with **"Invite users via link"** permission, set `DEEPSTREAM_PRO_CHANNEL_ID`.
-- [ ] **Webhook URL registered** in the Cashfree dashboard for `ORDER_PAID`, `ORDER_FAILED`, `ORDER_CANCELLED`, `REFUND_STATUS` → `https://<your-domain>/webhooks/cashfree`.
-- [ ] **Domain whitelisted** in the Cashfree dashboard (production).
-- [ ] **`CASHFREE_SITE_URL`** points at the deployed site.
-- [ ] **Sandbox end-to-end test** — `python verify_telegram.py --test-invite` then `python run_sandbox_e2e.py all` (test card `4111 1111 1111 1111`, CVV `123`, OTP `111000`, or UPI `testsuccess@gocash`) confirms order → webhook → invite → access.
-- [ ] **Verify the webhook signature variant** Cashfree actually delivers (body-only vs timestamp+body) against a real dashboard test event — the code accepts both, but confirm before going live.
-- [ ] **Production switch** — set `CASHFREE_ENV=production` after KYC activation.
-- [ ] **First weekly run** — `./run_weekly.sh` (or the GitHub Actions schedule) and confirm delivery to both channels.
-
-### Optional future work
-- **Billing note:** the Pro tier is billed in **INR (₹2,499/mo)** as a monthly order — each successful payment grants 30 days via a fresh invite link. Since billing is INR, Cashfree's native auto-recurring subscriptions (UPI AutoPay / eNACH) are available as a future upgrade from the current monthly-order flow.
-- Add edge-level (CDN/WAF) rate limiting in front of the Netlify Functions (in-memory limiter is best-effort per warm instance).
-- Expand beyond the 3 monitored pairs as new ocean datasets become available.
-
----
-
-## Architecture
+## Repository structure
 
 ```
-deepstream/
-  config.py            # asset pairs, thresholds, risk, delivery settings
-  logging_setup.py     # structured rotating-file logging
-  signal_engine.py     # lagged correlation → trade setups + confidence grades
-  track_record.py      # walk-forward, out-of-sample performance replay
-  telegram.py          # tiered Telegram delivery (public summary / Pro report)
-  payments.py          # Cashfree orders, signed webhooks, invite-link fulfillment
-  chart_data.py        # time-series + equity-curve payload for the site
-  server.py            # local dev backend (landing site + JSON endpoints)
-  cli.py / __main__.py # `python -m deepstream {generate,track,run}`
-
-netlify/
-  functions/           # production payment backend (mirrors deepstream/payments.py)
-    create-order.mjs   # POST /api/create-order
-    cashfree-webhook.mjs  # POST /webhooks/cashfree
-    access.mjs         # GET /api/access?order_id=
-    payments-config.mjs   # GET /api/payments_config
-    _shared/cashfree.mjs  # shared API / signature / blob-storage helpers
-
-signal_site/           # landing page (static, published by Netlify)
-tests/                 # 60 unit tests
-fetch_data.py          # pulls ocean + price data into data/
-quant_optimizer.py     # 20-year multicore parameter optimization
-quant_econometrics.py  # stationarity + Granger causality proofs
-run_backtests.py       # historical backtest engine
-run_weekly.sh          # weekly pipeline wrapper
-verify_telegram.py     # Telegram setup health check
-run_sandbox_e2e.py     # Cashfree sandbox end-to-end harness
-plan.md                # monetization plan & go-live details
-walkthrough.md         # full research & implementation report
+Deepstream/
+├── deepstream/          # Python package — signal platform (backend)
+│   ├── config.py        #   every threshold, asset, path (single source of truth)
+│   ├── validation.py    #   server-side input validation
+│   ├── middleware.py    #   rate limiting + security headers
+│   ├── server.py        #   HTTP routes/handlers (local dev backend)
+│   ├── signal_engine.py #   lagged correlation → trade setups + grades
+│   ├── track_record.py  #   walk-forward out-of-sample replay
+│   ├── telegram.py      #   tiered Telegram delivery
+│   ├── payments.py      #   Cashfree orders, signed webhooks, invite fulfillment
+│   └── chart_data.py    #   chart payloads for the site
+├── scripts/             # research & ops scripts (fetch, optimize, verify, e2e)
+├── netlify/             # production payment backend (functions/)
+│   └── functions/       #   create-order · cashfree-webhook · access · payments-config
+├── signal_site/         # deployed landing site (Netlify publish dir)
+├── docs/                # client deliverables (research report, user guide, API ref)
+├── internal/            # workspace (dev notes, AI prompts, marketing automation)
+├── tests/               # 67 unit tests
+├── data/                # processed ocean + price datasets
+├── plots/               # diagnostic plots (tracked — CI pushes them)
+├── index.html           # operations console (admin UI)
+├── data-store.js        # compiled browser dataset (generated)
+├── run_weekly.sh        # weekly pipeline wrapper
+└── netlify.toml         # publish dir, functions dir, redirects
 ```
 
-**Payment flow:** landing page → `POST /api/create-order` → Cashfree hosted checkout → signed webhook → verify signature → re-check order against Cashfree API (PAID, amount, currency) → mint single-use Pro-channel invite link → `success.html` polls `/api/access` → customer gets the link. Refunds/failures revoke it.
+## Installation
 
----
+**Prerequisites**
 
-## Setup
-
-### Prerequisites
 - Python 3.10+ (developed against 3.12) with `pip`
-- Node.js 18+ only needed for Netlify Functions (`npm install` in `netlify/functions` — dependency: `@netlify/blobs`)
-
-### Installation
+- Node.js 18+ only for the Netlify Functions (`npm install`)
 
 ```bash
+git clone https://github.com/03musab/Deepstream.git
+cd Deepstream
+
 pip install -r requirements.txt
-cp .env.example .env     # then fill in your values (see below)
+cp .env.example .env       # then fill in your values (see below)
 ```
 
-### Environment variables (`.env`)
+## Environment variables
+
+All variables are documented in `.env.example`:
 
 | Variable | Purpose |
 |----------|---------|
@@ -187,11 +135,27 @@ cp .env.example .env     # then fill in your values (see below)
 | `CASHFREE_ORDER_AMOUNT` / `CASHFREE_ORDER_CURRENCY` | Price per Pro month (default `2499` / `INR`) |
 | `CASHFREE_SITE_URL` | Deployed site URL (used as the checkout return URL) |
 
----
+The same variables must be set as **Netlify environment variables** for the
+production Functions.
 
-## Usage
+## Running the frontend
 
-### CLI
+**Landing site** (what customers see) — served by the local backend, or
+directly from `signal_site/`:
+
+```bash
+python -m deepstream.server          # serves signal_site/ + APIs on :8080
+# open http://localhost:8080
+```
+
+**Operations console** (admin/demo UI) — a standalone static page:
+
+```bash
+python -m http.server 8000           # from the repo root
+# open http://localhost:8000/index.html
+```
+
+## Running the backend
 
 ```bash
 python -m deepstream generate              # emit latest_signal.json
@@ -209,35 +173,114 @@ python -m deepstream.server                # serve the site + APIs on :8080
 ./run_weekly.sh --skip-pipeline # offline-safe, uses existing data
 ```
 
-Or let GitHub Actions do it automatically every Monday (`.github/workflows/weekly.yml`).
+Or let GitHub Actions do it automatically every Monday
+(`.github/workflows/weekly.yml`).
 
-### Testing
+## Build process
 
-```bash
-python -m unittest discover -s tests   # 60 tests
-```
-
-### Pre-flight checks
+There is no compile step for the site (static assets). Generated artifacts:
 
 ```bash
-python verify_telegram.py               # bot token + channel admin + invite permission
-python verify_telegram.py --test-invite # plus a real mint/revoke round trip
-python run_sandbox_e2e.py preflight     # payment env + target-server readiness
+python scripts/fetch_data.py             # pulls ocean + price data into data/
+python scripts/quant_optimizer.py        # multicore grid-search → optimized_parameters.json
+python scripts/run_backtests.py          # historical backtest engine + plots/
+python scripts/convert_csv_to_js.py      # data/*.csv → data-store.js (browser dataset)
 ```
 
----
+`python -m deepstream run` chains the pipeline, then copies the refreshed
+`latest_signal.json`, `track_record.json`, and `chart_data.json` into
+`signal_site/` for deployment.
+
+## Marketing automation
+
+Inbound-only systems, no cold outreach:
+
+- **Weekly content generator** — `python internal/marketing/content-generator.py all`
+  produces LinkedIn/X posts, a subscriber email, a blog draft, a feature
+  announcement, and appends a changelog entry — all from the *published*
+  signal/track-record numbers (never invented).
+- **Landing page SEO** — Open Graph, Twitter cards, JSON-LD structured data
+  (Organization, WebSite, FAQPage), `robots.txt`, `sitemap.xml`.
+- **Newsletter / lead capture** — Netlify Forms signup in the site footer.
+- **Changelog** — `signal_site/changelog.html` rendered from
+  `signal_site/changelog.json`.
+- **Templates & frameworks** — `internal/marketing/`: email campaigns, social
+  cadence, referral program.
+
+## Testing
+
+```bash
+python -m unittest discover -s tests     # 67 tests
+
+# Pre-flight / end-to-end checks
+python scripts/verify_telegram.py               # bot token + channel admin + invite permission
+python scripts/verify_telegram.py --test-invite # plus a real mint/revoke round trip
+python scripts/run_sandbox_e2e.py preflight     # payment env + target-server readiness
+python scripts/run_sandbox_e2e.py all           # create → pay → webhook → access (sandbox)
+```
 
 ## Deployment
 
-- **Site**: static (`signal_site/`) published by Netlify (`netlify.toml`).
-- **Payment backend**: Netlify Functions (`netlify/functions/`) with order state in **Netlify Blobs** — set the Cashfree + Telegram vars as Netlify environment variables.
-- **Weekly automation**: GitHub Actions on schedule or manual dispatch; refreshed signal/track/chart assets are committed back automatically, triggering a Netlify redeploy.
-- **Local dev**: `python -m deepstream.server` serves the same site and API routes (state in `data/subscriptions.json`).
+- **Site:** static (`signal_site/`) published by Netlify (`netlify.toml`).
+- **Payment backend:** Netlify Functions (`netlify/functions/`) with order
+  state in Netlify Blobs — set the Cashfree + Telegram vars as Netlify
+  environment variables. Register the webhook URL
+  `https://<your-domain>/webhooks/cashfree` for `ORDER_PAID`,
+  `ORDER_FAILED`, `ORDER_CANCELLED`, `REFUND_STATUS` in the Cashfree
+  dashboard.
+- **Weekly automation:** GitHub Actions on schedule or manual dispatch;
+  refreshed assets are committed back, triggering a Netlify redeploy.
 
----
+### Go-live checklist
 
-## Documentation
+- [ ] `.env` configured with real credentials; same vars set on Netlify
+- [ ] Cashfree production KYC approved; `CASHFREE_ENV=production`
+- [ ] Webhook URL + secret registered; domain whitelisted
+- [ ] Private Pro channel created; bot admin with "Invite users via link"
+- [ ] `python scripts/run_sandbox_e2e.py all` passes end-to-end
+- [ ] Confirm which webhook signature variant Cashfree delivers
+      (body-only vs timestamp+body — the code accepts both)
 
-- [`plan.md`](plan.md) — monetization strategy, revenue model, delivery split, go-live checklist.
-- [`walkthrough.md`](walkthrough.md) — the definitive research report: concepts, 20-year optimization results, econometric proofs, event studies, and dashboard features.
-- [`deepstream/config.py`](deepstream/config.py) — every threshold and risk parameter, auditable in one place.
+## Future roadmap
+
+- **Recurring billing** — migrate monthly orders to Cashfree auto-recurring
+  subscriptions (UPI AutoPay / eNACH), since billing is INR-native.
+- **Referral program** — implement the framework in
+  `internal/marketing/referral-program.md` (unique links + credit ledger).
+- **More pairs** — expand beyond the 3 monitored markets as new ocean
+  datasets become available.
+- **Edge rate limiting** — CDN/WAF-level limits in front of the Functions
+  (the in-memory limiter is best-effort per warm instance).
+- **Blog** — publish generated article drafts to a `signal_site/blog/`
+  index for organic search.
+
+## Troubleshooting
+
+| Symptom | Fix |
+|---------|-----|
+| `Cashfree credentials are not configured` | Set `CASHFREE_CLIENT_ID` / `CASHFREE_CLIENT_SECRET` in the server's env, then restart/redeploy. |
+| `createChatInviteLink failed: not enough rights` | The bot is not admin of the Pro channel, or lacks "Invite users via link". Run `python scripts/verify_telegram.py`. |
+| Webhook returns `401 invalid signature` | `CASHFREE_WEBHOOK_SECRET` mismatch, or the dashboard uses a different signature scheme. The code accepts body-only and timestamp+body variants. |
+| `create-order` returns `502` with a provider detail | Read the `detail`/`code` field — it is Cashfree's real reason (e.g. sandbox account rejecting the order). |
+| Charts empty on the operations console | Rebuild `data-store.js`: `python scripts/convert_csv_to_js.py`. |
+| Track record shows `0 trades` | `data/*.csv` missing — run `python scripts/fetch_data.py` first. |
+| `Order not yet seen` on the success page | The webhook hasn't processed yet (polls every 2s, up to 60s), or the webhook URL/secret is misconfigured. |
+
+## Contributing
+
+1. Fork the repository.
+2. Create a feature branch (`git checkout -b feat/your-change`).
+3. Make changes — keep behaviour config-driven (`deepstream/config.py`),
+   keep the Python and Netlify backends in sync, and never commit secrets.
+4. Add/update unit tests under `tests/` and run
+   `python -m unittest discover -s tests`.
+5. Open a pull request with a clear description.
+
+See [`internal/dev-notes.md`](internal/dev-notes.md) for architecture and
+conventions, and [`docs/`](docs/) for the research report, user guide, and
+API reference.
+
+## License
+
+Proprietary — all rights reserved. The research report and track record are
+published for transparency; the product itself is not open source.

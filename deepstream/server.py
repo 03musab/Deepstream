@@ -4,17 +4,15 @@ from __future__ import annotations
 
 import http.server
 import json
-import re
-import threading
-import time
+import os
 import urllib.parse
-from collections import defaultdict, deque
 from pathlib import Path
 from typing import Optional
 
 from deepstream import config
 from deepstream.chart_data import build_chart_data
 from deepstream.logging_setup import setup_logging
+from deepstream.middleware import MAX_BODY_BYTES, RATE_LIMITS, SECURITY_HEADERS
 from deepstream.payments import (
     CashfreeError,
     create_cashfree_order,
@@ -22,58 +20,13 @@ from deepstream.payments import (
     payments_config,
     SubscriptionStore,
 )
+from deepstream.validation import (
+    normalize_phone,
+    valid_email,
+    valid_order_id,
+    valid_phone_digits,
+)
 logger = setup_logging()
-
-# ---------------------------------------------------------------------------
-# Request guards (hardening)
-# ---------------------------------------------------------------------------
-
-# Cap request bodies so a hostile client cannot exhaust memory with a huge
-# Content-Length (webhooks are small JSON documents).
-MAX_BODY_BYTES = 1_048_576  # 1 MiB
-
-# Emails/order ids are validated server-side (never trust the client alone).
-EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
-ORDER_ID_RE = re.compile(r"^ds_[0-9a-f]{16}$")
-
-# Cashfree's Create Order API requires a valid 10-15 digit phone number.
-# We normalize to digits-only and reject anything else before the request is
-# ever sent to the provider (an empty/malformed phone is a common cause of
-# Cashfree's generic "api Request Failed" rejection).
-PHONE_DIGITS_RE = re.compile(r"^\d{10,15}$")
-
-
-def _normalize_phone(value: str) -> str:
-    return re.sub(r"\D", "", value or "")
-
-# Simple in-memory sliding-window rate limiter, keyed by client IP. This is a
-# best-effort guard for the local dev backend; production should add an
-# edge-level (CDN/WAF) rate limit in front of the Netlify Functions.
-class _RateLimiter:
-    def __init__(self, max_requests: int, window_seconds: float):
-        self.max_requests = max_requests
-        self.window = window_seconds
-        self._hits: dict[str, deque] = defaultdict(deque)
-        self._lock = threading.Lock()
-
-    def allow(self, key: str) -> bool:
-        now = time.monotonic()
-        with self._lock:
-            q = self._hits[key]
-            while q and q[0] <= now - self.window:
-                q.popleft()
-            if len(q) >= self.max_requests:
-                return False
-            q.append(now)
-            return True
-
-
-# Per-IP budgets. Generous so legitimate polls/retries are never blocked.
-RATE_LIMITS = {
-    config.CREATE_ORDER_API_PATH: _RateLimiter(20, 60),   # 20 order creations/min
-    config.CASHFREE_WEBHOOK_PATH: _RateLimiter(120, 60),  # webhook retries must never be dropped
-    config.ACCESS_API_PATH: _RateLimiter(240, 60),        # success page polls every 2s
-}
 
 
 class DeepstreamHandler(http.server.SimpleHTTPRequestHandler):
@@ -86,10 +39,8 @@ class DeepstreamHandler(http.server.SimpleHTTPRequestHandler):
 
     def end_headers(self) -> None:
         # Security headers on every response (static pages + JSON endpoints).
-        self.send_header("X-Content-Type-Options", "nosniff")
-        self.send_header("X-Frame-Options", "DENY")
-        self.send_header("Referrer-Policy", "strict-origin-when-cross-origin")
-        self.send_header("Permissions-Policy", "camera=(), microphone=(), geolocation=()")
+        for name, value in SECURITY_HEADERS.items():
+            self.send_header(name, value)
         super().end_headers()
 
     def _allowed_origin(self) -> str:
@@ -98,7 +49,6 @@ class DeepstreamHandler(http.server.SimpleHTTPRequestHandler):
         Defaults to the configured landing-site origin (``CASHFREE_SITE_URL``).
         When empty (no site configured) cross-origin reads are refused.
         """
-        import os
         site = os.environ.get(config.CASHFREE_SITE_URL_ENV, "").strip().rstrip("/")
         if not site:
             return ""
@@ -186,11 +136,11 @@ class DeepstreamHandler(http.server.SimpleHTTPRequestHandler):
             self._serve_json_obj({"error": "invalid body"}, status=400)
             return
         customer_email = (payload.get("customer_email") or "").strip()
-        customer_phone = _normalize_phone(payload.get("customer_phone") or "")
-        if not customer_email or len(customer_email) > 254 or not EMAIL_RE.match(customer_email):
+        customer_phone = normalize_phone(payload.get("customer_phone") or "")
+        if not valid_email(customer_email):
             self._serve_json_obj({"error": "customer_email required"}, status=400)
             return
-        if not PHONE_DIGITS_RE.match(customer_phone):
+        if not valid_phone_digits(customer_phone):
             self._serve_json_obj(
                 {"error": "customer_phone required (10-15 digits)"}, status=400
             )
@@ -219,7 +169,7 @@ class DeepstreamHandler(http.server.SimpleHTTPRequestHandler):
             return
         query = urllib.parse.parse_qs(urllib.parse.urlparse(path).query)
         order_id = (query.get("order_id") or [""])[0].strip()
-        if not order_id or len(order_id) > 64 or not ORDER_ID_RE.match(order_id):
+        if not valid_order_id(order_id):
             self._serve_json_obj({"error": "order_id invalid"}, status=400)
             return
         self._serve_json_obj(SubscriptionStore().access_for_order(order_id))

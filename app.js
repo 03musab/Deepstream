@@ -3,6 +3,46 @@ document.addEventListener("DOMContentLoaded", () => {
     // Initialise Lucide Icons
     lucide.createIcons();
 
+    // ---- Transient feedback toast ---------------------------------------
+    let toastTimer = null;
+    function showToast(message) {
+        const toast = document.getElementById("app-toast");
+        if (!toast) return;
+        toast.textContent = message;
+        toast.classList.add("show");
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => toast.classList.remove("show"), 3200);
+    }
+
+    // ---- Offline / empty-state banner -----------------------------------
+    // If the compiled dataset is missing the console still renders, but the
+    // user gets a clear signal that charts will be empty.
+    if (typeof NEPTUNE_DATA_STORE === "undefined") {
+        const banner = document.getElementById("offline-banner");
+        if (banner) banner.classList.remove("hidden");
+        showToast("Offline mode — dataset unavailable. Rebuild data-store.js to enable charts.");
+    }
+
+    // ---- Mobile navigation (off-canvas drawer) ---------------------------
+    const menuToggleOpen = document.getElementById("menu-toggle-open");
+    const menuToggle = document.getElementById("menu-toggle");
+    function setNavOpen(open) {
+        document.body.classList.toggle("nav-open", open);
+        if (menuToggleOpen) menuToggleOpen.setAttribute("aria-expanded", String(open));
+        if (menuToggle) menuToggle.setAttribute("aria-expanded", String(!open));
+    }
+    if (menuToggleOpen) menuToggleOpen.addEventListener("click", () => setNavOpen(true));
+    if (menuToggle) menuToggle.addEventListener("click", () => setNavOpen(false));
+    document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") setNavOpen(false);
+    });
+    // Tap outside the drawer (or the open button) to dismiss it on mobile.
+    document.addEventListener("click", (e) => {
+        if (!document.body.classList.contains("nav-open")) return;
+        if (e.target.closest("#sidebar") || e.target.closest("#menu-toggle-open")) return;
+        setNavOpen(false);
+    });
+
     // Application State
     const state = {
         activeTab: "terminal",
@@ -201,6 +241,13 @@ document.addEventListener("DOMContentLoaded", () => {
     function initForecastChart(commodity) {
         const ctx = document.getElementById('forecastChart');
         if (!ctx) return;
+
+        // Show a brief loading state so slider scrubbing feels responsive.
+        const loading = document.getElementById("chart-loading");
+        if (loading) {
+            loading.classList.remove("is-loading");
+            loading.setAttribute("aria-hidden", "false");
+        }
         
         const config = commodityConfigMap[commodity];
         const lagInput = document.getElementById("lag-slider-input");
@@ -302,6 +349,14 @@ document.addEventListener("DOMContentLoaded", () => {
     const lagSliderVal = document.getElementById("lag-slider-val");
     
     zoneMarkers.forEach(marker => {
+        // Keyboard access: Enter/Space activate a zone like a click.
+        marker.addEventListener("keydown", (e) => {
+            if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                marker.click();
+            }
+        });
+
         marker.addEventListener("click", () => {
             zoneMarkers.forEach(m => m.classList.remove("active-target"));
             marker.classList.add("active-target");
@@ -420,6 +475,9 @@ document.addEventListener("DOMContentLoaded", () => {
             navItems.forEach(n => n.classList.remove("active"));
             item.classList.add("active");
             
+            // Close the off-canvas drawer on mobile once a section is chosen.
+            setNavOpen(false);
+            
             const targetTab = item.getAttribute("data-tab");
             state.activeTab = targetTab;
             
@@ -454,71 +512,74 @@ document.addEventListener("DOMContentLoaded", () => {
             grid.id = "zones-dynamic";
             grid.className = "workspace-grid full-width-panel";
             grid.innerHTML = `
-                <div class="panel" style="grid-column: span 3; padding: 24px;">
+                <div class="panel full-width-panel">
                     <h2 class="panel-title" style="margin-bottom: 20px; color: var(--color-cyan);">Deployment Zones Overview</h2>
-                    <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 14px;">
-                        <thead>
-                            <tr style="border-bottom: 1px solid var(--border-color); color: var(--text-secondary);">
-                                <th style="padding: 12px;">Zone</th>
-                                <th style="padding: 12px;">Coordinates</th>
-                                <th style="padding: 12px;">Primary Ocean Indicator</th>
-                                <th style="padding: 12px;">Target Commodity</th>
-                                <th style="padding: 12px;">Pearson Correlation</th>
-                                <th style="padding: 12px;">Forecast Lead Time</th>
-                                <th style="padding: 12px;">Status</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
-                                <td style="padding: 16px; font-weight:600;">Alpha (Pacific Ring)</td>
-                                <td style="padding: 16px; font-family:var(--font-mono);">0.528° S, 120.449° W</td>
-                                <td style="padding: 16px;">SST Anomaly (ENSO)</td>
-                                <td style="padding: 16px;">Copper Futures (HG=F)</td>
-                                <td style="padding: 16px; color: var(--color-cyan);" class="text-glow">r = 0.9135</td>
-                                <td style="padding: 16px;">8 Weeks</td>
-                                <td style="padding: 16px;"><span class="confidential-badge" style="background:rgba(0,230,118,0.1); color:var(--color-emerald); border-color:var(--color-emerald)">ACTIVE</span></td>
-                            </tr>
-                            <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
-                                <td style="padding: 16px; font-weight:600;">Beta (Gulf of Mexico)</td>
-                                <td style="padding: 16px; font-family:var(--font-mono);">26.312° N, 88.754° W</td>
-                                <td style="padding: 16px;">Chemical Plume index</td>
-                                <td style="padding: 16px;">Crude Oil (CL=F)</td>
-                                <td style="padding: 16px; color: var(--color-amber);">r = 0.6026</td>
-                                <td style="padding: 16px;">2 Weeks</td>
-                                <td style="padding: 16px;"><span class="confidential-badge" style="background:rgba(0,230,118,0.1); color:var(--color-emerald); border-color:var(--color-emerald)">ACTIVE</span></td>
-                            </tr>
-                            <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
-                                <td style="padding: 16px; font-weight:600;">Gamma (North Atlantic)</td>
-                                <td style="padding: 16px; font-family:var(--font-mono);">58.450° N, 12.180° W</td>
-                                <td style="padding: 16px;">Chlorophyll density drop</td>
-                                <td style="padding: 16px;">North Sea Tuna Prices</td>
-                                <td style="padding: 16px; color: var(--color-cyan);" class="text-glow">r = -0.9498</td>
-                                <td style="padding: 16px;">4 Weeks</td>
-                                <td style="padding: 16px;"><span class="confidential-badge" style="background:rgba(0,230,118,0.1); color:var(--color-emerald); border-color:var(--color-emerald)">ACTIVE</span></td>
-                            </tr>
-                            <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
-                                <td style="padding: 16px; font-weight:600;">Delta (Indian Ocean)</td>
-                                <td style="padding: 16px; font-family:var(--font-mono);">12.920° N, 60.110° E</td>
-                                <td style="padding: 16px;">Current flows & Chemistry</td>
-                                <td style="padding: 16px;">Shipping Route Risks</td>
-                                <td style="padding: 16px; color: var(--color-cyan);">r = 0.7812</td>
-                                <td style="padding: 16px;">3 Weeks</td>
-                                <td style="padding: 16px;"><span class="confidential-badge" style="background:rgba(0,242,254,0.1); color:var(--color-cyan); border-color:var(--color-cyan)">PENDING P2</span></td>
-                            </tr>
-                            <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
-                                <td style="padding: 16px; font-weight:600;">Epsilon (Arctic Passage)</td>
-                                <td style="padding: 16px; font-family:var(--font-mono);">78.115° N, 42.902° E</td>
-                                <td style="padding: 16px;">Ice density anomaly</td>
-                                <td style="padding: 16px;">Rare Earth / Ice Routing</td>
-                                <td style="padding: 16px; color: var(--color-cyan);">r = 0.8415</td>
-                                <td style="padding: 16px;">6 Weeks</td>
-                                <td style="padding: 16px;"><span class="confidential-badge" style="background:rgba(0,242,254,0.1); color:var(--color-cyan); border-color:var(--color-cyan)">PENDING P2</span></td>
-                            </tr>
-                        </tbody>
-                    </table>
+                    <div class="table-scroll">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Zone</th>
+                                    <th>Coordinates</th>
+                                    <th>Primary Ocean Indicator</th>
+                                    <th>Target Commodity</th>
+                                    <th>Pearson Correlation</th>
+                                    <th>Forecast Lead Time</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td style="font-weight:600;">Alpha (Pacific Ring)</td>
+                                    <td class="mono">0.528° S, 120.449° W</td>
+                                    <td>SST Anomaly (ENSO)</td>
+                                    <td>Copper Futures (HG=F)</td>
+                                    <td class="text-glow">r = 0.9135</td>
+                                    <td>8 Weeks</td>
+                                    <td><span class="badge badge-success">ACTIVE</span></td>
+                                </tr>
+                                <tr>
+                                    <td style="font-weight:600;">Beta (Gulf of Mexico)</td>
+                                    <td class="mono">26.312° N, 88.754° W</td>
+                                    <td>Chemical Plume index</td>
+                                    <td>Crude Oil (CL=F)</td>
+                                    <td style="color: var(--color-amber);">r = 0.6026</td>
+                                    <td>2 Weeks</td>
+                                    <td><span class="badge badge-success">ACTIVE</span></td>
+                                </tr>
+                                <tr>
+                                    <td style="font-weight:600;">Gamma (North Atlantic)</td>
+                                    <td class="mono">58.450° N, 12.180° W</td>
+                                    <td>Chlorophyll density drop</td>
+                                    <td>North Sea Tuna Prices</td>
+                                    <td class="text-glow">r = -0.9498</td>
+                                    <td>4 Weeks</td>
+                                    <td><span class="badge badge-success">ACTIVE</span></td>
+                                </tr>
+                                <tr>
+                                    <td style="font-weight:600;">Delta (Indian Ocean)</td>
+                                    <td class="mono">12.920° N, 60.110° E</td>
+                                    <td>Current flows & Chemistry</td>
+                                    <td>Shipping Route Risks</td>
+                                    <td style="color: var(--color-cyan);">r = 0.7812</td>
+                                    <td>3 Weeks</td>
+                                    <td><span class="badge badge-cyan">PENDING P2</span></td>
+                                </tr>
+                                <tr>
+                                    <td style="font-weight:600;">Epsilon (Arctic Passage)</td>
+                                    <td class="mono">78.115° N, 42.902° E</td>
+                                    <td>Ice density anomaly</td>
+                                    <td>Rare Earth / Ice Routing</td>
+                                    <td style="color: var(--color-cyan);">r = 0.8415</td>
+                                    <td>6 Weeks</td>
+                                    <td><span class="badge badge-cyan">PENDING P2</span></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             `;
             mainContent.appendChild(grid);
+            lucide.createIcons();
         } else if (tabName === "modeler") {
             document.getElementById("page-title").textContent = "Financial Projection Modeler";
             const grid = document.createElement("div");
@@ -571,6 +632,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 </div>
             `;
             mainContent.appendChild(grid);
+            lucide.createIcons();
             
             // Initialise Modeler Chart
             initModelerChart();
@@ -714,11 +776,7 @@ document.addEventListener("DOMContentLoaded", () => {
             playDemoBtn.style.opacity = "0.5";
             playDemoBtn.querySelector("span").textContent = "Running Demo...";
             
-            demoCallout.style.display = "flex";
-            setTimeout(() => {
-                demoCallout.style.opacity = "1";
-                demoCallout.style.transform = "translateY(0)";
-            }, 100);
+            demoCallout.classList.add("visible");
             
             updateDemoStep(1, 6, "Welcome to the Deepstream Terminal Demonstration. We begin in Zone Alpha (Pacific ENSO) mapping Sea Surface Temperatures.", () => {
                 const alphaMarker = document.getElementById("zone-alpha");
@@ -747,11 +805,8 @@ document.addEventListener("DOMContentLoaded", () => {
                                                                     const terminalTabBtn = document.querySelector('[data-tab="terminal"]');
                                                                     if (terminalTabBtn) terminalTabBtn.dispatchEvent(new Event("click"));
                                                                     
-                                                                    demoCallout.style.opacity = "0";
-                                                                    demoCallout.style.transform = "translateY(20px)";
-                                                                    setTimeout(() => {
-                                                                        demoCallout.style.display = "none";
-                                                                    }, 400);
+                                                                    demoCallout.classList.remove("visible");
+                                                                    showToast("Demo complete — Deepstream terminal tour finished.");
                                                                     
                                                                     playDemoBtn.disabled = false;
                                                                     playDemoBtn.style.opacity = "1";
@@ -821,5 +876,21 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Default Initialization
     initForecastChart("copper");
-    document.getElementById("zone-alpha").classList.add("active-target");
+    document.getElementById("zone-alpha")?.classList.add("active-target");
+
+    // Hide the loading overlay shortly after the chart has had a frame to
+    // paint (opacity-only transition, so it fades instead of vanishing).
+    function hideChartLoading() {
+        const loading = document.getElementById("chart-loading");
+        if (loading) {
+            loading.classList.add("is-loading");
+            loading.setAttribute("aria-hidden", "true");
+        }
+    }
+    const loadTimer = setInterval(() => {
+        if (forecastChart) {
+            clearInterval(loadTimer);
+            setTimeout(hideChartLoading, 250);
+        }
+    }, 100);
 });

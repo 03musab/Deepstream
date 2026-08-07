@@ -322,6 +322,35 @@ function renderTrackRecord(record) {
 }
 
 /* ------------------------------------------------------------------ */
+/* Newsletter / lead capture (Netlify Forms)                           */
+/* ------------------------------------------------------------------ */
+// Static forms with data-netlify="true" submit via AJAX to the site root.
+// On Netlify this stores submissions in the dashboard; locally it fails
+// gracefully and still confirms the signup visually.
+document.querySelectorAll("form[data-netlify='true']").forEach((form) => {
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const email = form.querySelector('input[type="email"]');
+    const honeypot = form.querySelector('input[name="bot-field"]');
+    const raw = new URLSearchParams(new FormData(form).entries());
+    if (!honeypot || !honeypot.value) {
+      try {
+        await fetch("/", {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body: raw.toString(),
+        });
+      } catch {
+        // Not deployed yet — never block the visitor's signup flow.
+      }
+    }
+    if (email) email.value = "";
+    form.innerHTML =
+      '<p class="newsletter-done" role="status">\u2713 You\u2019re on the list \u2014 weekly signal digest, no spam.</p>';
+  });
+});
+
+/* ------------------------------------------------------------------ */
 /* Boot                                                                */
 /* ------------------------------------------------------------------ */
 async function init() {

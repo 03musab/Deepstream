@@ -544,6 +544,113 @@ a { color: inherit; text-decoration: none; }
 .pricing-card .btn { text-align: center; margin-top: auto; }
 
 /* ---------------------------------------------------------------------------
+   Newsletter / lead capture
+--------------------------------------------------------------------------- */
+.newsletter-form {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+  max-width: 320px;
+}
+
+.newsletter-form input[type="email"] {
+  flex: 1;
+  min-width: 0;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 8px;
+  padding: 9px 12px;
+  font-family: var(--font-ui);
+  font-size: 0.85rem;
+}
+
+.newsletter-form input[type="email"]::placeholder {
+  color: var(--text-faint);
+}
+
+.newsletter-form input[type="email"]:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.hidden-field {
+  position: absolute;
+  left: -9999px;
+  opacity: 0;
+  height: 0;
+  overflow: hidden;
+}
+
+.newsletter-done {
+  margin-top: 10px;
+  font-size: 0.82rem;
+  color: var(--positive);
+}
+
+/* Changelog page */
+.changelog-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  max-width: 760px;
+}
+
+.changelog-entry {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  padding: 26px 28px;
+}
+
+.changelog-entry time {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--accent);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.changelog-entry h3 {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 1.25rem;
+  margin: 8px 0 8px;
+}
+
+.changelog-entry p {
+  color: var(--text-dim);
+  font-size: 0.92rem;
+}
+
+.changelog-tag {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 3px 10px;
+  border-radius: 4px;
+  margin-bottom: 10px;
+}
+
+.changelog-tag.feat {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.changelog-tag.fix {
+  background: var(--positive-soft);
+  color: var(--positive);
+}
+
+.changelog-tag.signal {
+  background: var(--warn-soft);
+  color: var(--warn);
+}
+
+/* ---------------------------------------------------------------------------
    Checkout modal (Cashfree)
 --------------------------------------------------------------------------- */
 .checkout-modal {

@@ -1,8 +1,17 @@
 __pycache__/
 *.pyc
 .env
-deepstream.log
+*.log
+server_out.log
+.pytest_cache/
+intense_test_report.md
+quant_research_report.md
+internal/marketing/out/
 data/subscriptions.json
 data/subscriptions.json.tmp
 .netlify/
 .sandbox_e2e_state.json
+
+# Unreferenced NOAA Argo index dumps (huge; re-download on demand)
+ar_index_global_prof.txt
+ar_index_global_prof.txt.gz

@@ -7,26 +7,29 @@ import sys
 from deepstream.config import LOG_FILE
 
 
-def _console_safe_stream():
-    """Return ``sys.stdout`` configured so unicode (e.g. ``\u2192``) never
-    crashes console logging on encodings that cannot represent it.
+def make_console_unicode_safe() -> None:
+    """Best-effort: make the console tolerate unicode it cannot encode.
 
     Windows pipes/redirection default to the cp1252 codec, which cannot encode
-    the arrow characters used in pair names; ``StreamHandler`` would then emit
-    a spurious ``UnicodeEncodeError`` traceback for every such log line. The
-    file handler writes UTF-8, so the full characters are always preserved in
-    the log file — the console only degrades undisplayable characters to ``?``.
+    characters such as ``→`` (pair names) or emoji. After this call, stdout
+    degrades undisplayable characters to ``?`` instead of raising a spurious
+    ``UnicodeEncodeError`` traceback. Files are written UTF-8 regardless, so
+    nothing is lost on disk.
     """
-    stream = sys.stdout
-    reconfigure = getattr(stream, "reconfigure", None)
+    reconfigure = getattr(sys.stdout, "reconfigure", None)
     if callable(reconfigure):
         try:
             reconfigure(errors="replace")
         except (OSError, ValueError):
             # stdout is not a reconfigurable text stream (e.g. replaced by the
-            # caller); logging must keep working regardless.
+            # caller); callers must keep working regardless.
             pass
-    return stream
+
+
+def _console_safe_stream():
+    """Return ``sys.stdout`` after making it unicode-safe (see above)."""
+    make_console_unicode_safe()
+    return sys.stdout
 
 
 def setup_logging(verbose: bool = False) -> logging.Logger:
