@@ -176,7 +176,7 @@ def generate_simulated_data():
     df_oil.to_csv(os.path.join(DATA_DIR, "CL_F_processed.csv"), index=False)
     print("Generated and saved all simulated datasets in the 'data' directory.")
 
-def main():
+def main(no_sim: bool = False):
     print("=== Deepstream Data Fetching & Generation System ===")
     sst_df = fetch_noaa_sst()
     copper_df = fetch_yahoo_finance(COPPER_TICKER)
@@ -184,8 +184,13 @@ def main():
     
     # If any of the main fetches fail, we generate the full high-fidelity simulated datasets
     # to guarantee we can run the test suite and verify the correlation coefficients.
+    # With --no-sim (used by the daily delivery) a failed fetch instead leaves the
+    # existing datasets untouched rather than replacing real data with simulation.
     if sst_df is None or copper_df is None or oil_df is None:
-        generate_simulated_data()
+        if no_sim:
+            print("Fetch failed but --no-sim is set: keeping existing datasets untouched.")
+        else:
+            generate_simulated_data()
     else:
         # Save successfully downloaded datasets
         copper_df.to_csv(os.path.join(DATA_DIR, "HG_F_processed.csv"), index=False)
@@ -194,6 +199,9 @@ def main():
         # For Chlorophyll/Tuna and Plume/Oil, we generate high-fidelity simulated datasets
         # since raw global imagery netcdf files aren't directly queryable via standard API
         # in this environment.
+        # NOTE: this runs even with --no-sim — it is *data generation* (deterministic,
+        # seed 42) for series with no open API, not the failure fallback that --no-sim
+        # guards against. Do not gate it on the flag.
         print("Real data downloaded for SST and futures. Generating simulated chlorophyll/tuna and plume data...")
         # (reuse simulation logic for these two tests)
         date_range = pd.date_range(start=START_DATE, end=END_DATE, freq='D')
@@ -233,4 +241,14 @@ def main():
         print("Additional simulation data saved successfully.")
 
 if __name__ == "__main__":
-    main()
+    import argparse
+
+    parser = argparse.ArgumentParser(
+        description="Fetch ocean + commodity data into data/"
+    )
+    parser.add_argument(
+        "--no-sim", action="store_true",
+        help="never generate simulated fallback data; keep existing files on failure",
+    )
+    args = parser.parse_args()
+    main(no_sim=args.no_sim)

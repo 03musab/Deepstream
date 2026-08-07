@@ -4,6 +4,7 @@ Usage:
     python -m deepstream generate [--skip-pipeline] [--verbose]
     python -m deepstream track [--verbose]
     python -m deepstream run [--verbose]   # generate + track + copy to site
+    python -m deepstream daily [--no-fetch] [--verbose]  # daily Pro update
 """
 
 from __future__ import annotations
@@ -27,11 +28,15 @@ from deepstream.track_record import generate_track_record
 
 logger = setup_logging()
 
+# Research/ops scripts live under scripts/ and are invoked from the repo root
+# (relative paths inside them assume the repo root as CWD).
+SCRIPTS_DIR = Path(__file__).resolve().parent.parent / "scripts"
 
-def _run_step(name: str, script: Path) -> bool:
+
+def _run_step(name: str, script: Path, extra: list[str] | None = None) -> bool:
     logger.info("Running %s (%s)", name, script)
     result = subprocess.run(
-        [sys.executable, str(script)], capture_output=True, text=True
+        [sys.executable, str(script), *(extra or [])], capture_output=True, text=True
     )
     if result.returncode != 0:
         logger.warning(
@@ -44,13 +49,10 @@ def _run_step(name: str, script: Path) -> bool:
 
 
 def _run_pipeline() -> bool:
-    # Research/ops scripts live under scripts/ and are invoked from the repo
-    # root (relative paths inside them assume the repo root as CWD).
-    scripts_dir = Path(__file__).resolve().parent.parent / "scripts"
     steps = [
-        ("Data fetch", scripts_dir / "fetch_data.py"),
-        ("Parameter optimization", scripts_dir / "quant_optimizer.py"),
-        ("Backtest engine", scripts_dir / "run_backtests.py"),
+        ("Data fetch", SCRIPTS_DIR / "fetch_data.py"),
+        ("Parameter optimization", SCRIPTS_DIR / "quant_optimizer.py"),
+        ("Backtest engine", SCRIPTS_DIR / "run_backtests.py"),
     ]
     ok = all(_run_step(name, script) for name, script in steps)
     if not ok:
@@ -95,6 +97,16 @@ def cmd_track(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_daily(args: argparse.Namespace) -> int:
+    """Refresh prices and deliver the daily Pro-channel position update."""
+    if not args.no_fetch:
+        # --no-sim: a failed fetch keeps existing data instead of replacing
+        # it with simulated series, so a network blip never corrupts data/.
+        _run_step("Data refresh", SCRIPTS_DIR / "fetch_data.py", extra=["--no-sim"])
+    from deepstream.telegram import deliver_daily
+    return deliver_daily(verbose=args.verbose)
+
+
 def cmd_run(args: argparse.Namespace) -> int:
     rc = cmd_generate(args)
     if rc:
@@ -134,6 +146,15 @@ def main(argv: list[str] | None = None) -> int:
     p_run.add_argument("--skip-pipeline", action="store_true")
     p_run.add_argument("--no-track", action="store_true", help="skip track record")
     p_run.set_defaults(func=cmd_run)
+
+    p_daily = sub.add_parser(
+        "daily", help="deliver daily Pro-channel position update"
+    )
+    p_daily.add_argument(
+        "--no-fetch", action="store_true",
+        help="skip the data refresh and use existing data",
+    )
+    p_daily.set_defaults(func=cmd_daily)
 
     args = parser.parse_args(argv)
 

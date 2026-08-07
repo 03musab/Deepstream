@@ -8,8 +8,11 @@ from pathlib import Path
 from unittest import mock
 
 from deepstream import config
+from deepstream.signal_engine import Signal
 from deepstream.telegram import (
     deliver,
+    deliver_daily,
+    format_daily_report,
     format_signal_report,
     format_signal_summary,
     send_telegram,
@@ -132,6 +135,86 @@ class TestDeliver(unittest.TestCase):
     def test_deliver_missing_signal_file(self):
         config.SIGNAL_FILE.unlink()
         self.assertEqual(deliver(), 1)
+
+
+class TestDailyDelivery(unittest.TestCase):
+    """Daily Pro-channel position updates (private channel only)."""
+
+    def _active_signal(self) -> Signal:
+        return Signal(
+            pair_id=2,
+            pair="Atlantic Chlorophyll → Tuna Price",
+            direction="SHORT",
+            confidence="HIGH",
+            pearson_r=-0.7754,
+            lag_days=30,
+            entry=12.84,
+            stop_loss=13.48,
+            take_profit=11.81,
+            ocean_change=0.0287,
+            price_change_pct=-2.31,
+            status="ACTIVE",
+        )
+
+    def setUp(self):
+        self._env = os.environ.copy()
+        os.environ[config.TELEGRAM_TOKEN_ENV] = "test-bot-token"
+        os.environ[config.PRO_CHANNEL_ENV] = "-100pro"
+
+    def tearDown(self):
+        os.environ.clear()
+        os.environ.update(self._env)
+
+    def test_format_daily_report_includes_levels(self):
+        sig = dict(_signals()[0])  # the fixture has no move fields — add them
+        sig.update({"ocean_change": 0.0287, "price_change_pct": -2.31})
+        text = format_daily_report([sig], today="2026-08-07")
+        self.assertIn("Daily Position Update · 2026-08-07", text)
+        self.assertIn("Entry 12.84", text)
+        self.assertIn("SL 13.48", text)
+        self.assertIn("TP 11.81", text)
+        self.assertIn("Price change: -2.31%", text)
+
+    def test_format_daily_report_no_trade(self):
+        text = format_daily_report([
+            {"status": "NO_TRADE", "direction": "NONE", "confidence": "LOW",
+             "pearson_r": 0.03, "lag_days": 110},
+        ], today="2026-08-07")
+        self.assertIn("No tradeable setups today", text)
+
+    @mock.patch("deepstream.telegram.send_telegram", return_value="{}")
+    @mock.patch("deepstream.telegram.compute_all_signals")
+    @mock.patch("deepstream.telegram.load_params", return_value={})
+    def test_deliver_daily_sends_to_pro_channel(
+        self, mock_params, mock_compute, mock_send
+    ):
+        mock_compute.return_value = [self._active_signal()]
+        rc = deliver_daily()
+        self.assertEqual(rc, 0)
+        self.assertEqual(mock_send.call_count, 1)
+        self.assertEqual(mock_send.call_args.args[1], "-100pro")
+        self.assertIn("Daily Position Update", mock_send.call_args.args[2])
+        self.assertIn("Entry 12.84", mock_send.call_args.args[2])
+
+    @mock.patch("deepstream.telegram.send_telegram")
+    @mock.patch("deepstream.telegram.compute_all_signals")
+    @mock.patch("deepstream.telegram.load_params", return_value={})
+    def test_deliver_daily_requires_pro_channel(
+        self, mock_params, mock_compute, mock_send
+    ):
+        mock_compute.return_value = [self._active_signal()]
+        os.environ.pop(config.PRO_CHANNEL_ENV, None)
+        self.assertEqual(deliver_daily(), 1)
+        mock_send.assert_not_called()
+
+    @mock.patch("deepstream.telegram.send_telegram")
+    @mock.patch("deepstream.telegram.compute_all_signals")
+    @mock.patch("deepstream.telegram.load_params", return_value={})
+    def test_deliver_daily_requires_token(self, mock_params, mock_compute, mock_send):
+        mock_compute.return_value = [self._active_signal()]
+        os.environ.pop(config.TELEGRAM_TOKEN_ENV, None)
+        self.assertEqual(deliver_daily(), 1)
+        mock_send.assert_not_called()
 
 
 class TestSendTelegram(unittest.TestCase):

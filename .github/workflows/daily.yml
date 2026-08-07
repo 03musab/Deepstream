@@ -1,0 +1,43 @@
+name: Daily Pro Channel Update
+
+on:
+  schedule:
+    - cron: "0 6 * * *"   # every day 06:00 UTC — change to suit your release time
+  workflow_dispatch:       # also triggerable manually from the Actions tab
+
+# Daily runs never push assets back to the repo (unlike the weekly workflow),
+# so no write permission is needed.
+concurrency:
+  group: daily-delivery
+  cancel-in-progress: false
+
+jobs:
+  daily:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run unit tests (gate)
+        run: |
+          python -m unittest discover -s tests
+
+      - name: Refresh prices + deliver daily update to the Pro channel
+        env:
+          DEEPSTREAM_BOT_TOKEN: ${{ secrets.DEEPSTREAM_BOT_TOKEN }}
+          DEEPSTREAM_PRO_CHANNEL_ID: ${{ secrets.DEEPSTREAM_PRO_CHANNEL_ID }}
+        run: |
+          # The daily command fetches fresh prices with --no-sim internally,
+          # so a failed fetch keeps existing data instead of replacing it
+          # with simulated series.
+          python -m deepstream daily

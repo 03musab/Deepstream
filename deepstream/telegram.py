@@ -6,10 +6,12 @@ import json
 import os
 import urllib.parse
 import urllib.request
+from datetime import datetime
 from typing import Any, Optional
 
 from deepstream import config
 from deepstream.logging_setup import setup_logging
+from deepstream.signal_engine import compute_all_signals, load_params
 
 logger = setup_logging()
 
@@ -72,7 +74,12 @@ def format_signal_report(signals: list[dict[str, Any]]) -> str:
 
 
 def send_telegram(bot_token: str, chat_id: str, text: str) -> Optional[str]:
-    """Send ``text`` to a Telegram chat. Returns the raw API response body."""
+    """Send ``text`` to a Telegram chat. Returns the raw API response body.
+
+    Note: uses Telegram's legacy Markdown parse mode, so message content
+    must not contain unescaped ``_ * [ ``` characters. Pair names in
+    ``config.PAIRS`` are safe today; escape if content ever changes.
+    """
     url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
     data = urllib.parse.urlencode({
         "chat_id": chat_id,
@@ -132,6 +139,78 @@ def deliver(verbose: bool = False) -> int:
     if delivered == 0:
         logger.error("Telegram delivery failed: no message sent")
         return 1
+    return 0
+
+
+def format_daily_report(signals: list[dict[str, Any]], today: str | None = None) -> str:
+    """Render the daily position update for the private Pro channel.
+
+    Unlike the weekly report this is delivered every day and reflects the
+    freshly recomputed signal (current correlation and recent price moves).
+    Full entry / stop / target levels are included — this is Pro content.
+    """
+    active = [
+        s for s in signals
+        if s.get("status") == "ACTIVE" and s.get("direction") not in ("NONE",)
+    ]
+    date_str = today or datetime.utcnow().strftime("%Y-%m-%d")
+
+    lines = [f"DEEPSTREAM — Daily Position Update · {date_str}\n"]
+    if not active:
+        lines.append("No tradeable setups today. Standing aside is a position.")
+    else:
+        for s in active:
+            grade = s["confidence"]
+            tag = {"HIGH": "[HIGH]", "MEDIUM": "[MEDIUM]", "LOW": "[LOW]"}.get(grade, "")
+            arrow = "[LONG]" if s["direction"] == "LONG" else "[SHORT]"
+            lines.append(f"{tag} {s['pair']}")
+            lines.append(
+                f"  {arrow} Entry {s['entry']} | SL {s['stop_loss']} | TP {s['take_profit']}"
+            )
+            lines.append(
+                f"  r = {s['pearson_r']:.3f} | lead {s['lag_days']}d | {s['confidence']}"
+            )
+            if s.get("price_change_pct") is not None:
+                lines.append(
+                    f"  Price change: {s['price_change_pct']:+.2f}% | "
+                    f"Ocean move: {float(s.get('ocean_change') or 0):+.4f}"
+                )
+            lines.append("")
+
+    lines.append("Next update tomorrow. Weekly track record published every Monday.")
+    return "\n".join(lines)
+
+
+def deliver_daily(verbose: bool = False) -> int:
+    """Recompute signals from the current data and send a daily position
+    update to the private Pro channel.
+
+    Unlike the weekly flow this never touches the published site assets or
+    the track record — it is a lightweight daily status for subscribers.
+    Returns 0 on delivery, 1 when misconfigured or the send fails.
+    """
+    global logger
+    logger = setup_logging(verbose=verbose)
+
+    params = load_params()
+    signals = [s.to_dict() for s in compute_all_signals(params)]
+    report = format_daily_report(signals)
+
+    token = os.environ.get(config.TELEGRAM_TOKEN_ENV)
+    pro_channel = os.environ.get(config.PRO_CHANNEL_ENV)
+    if not (token and pro_channel):
+        logger.info(
+            "Daily update needs %s and %s — printing report:\n%s",
+            config.TELEGRAM_TOKEN_ENV, config.PRO_CHANNEL_ENV, report,
+        )
+        return 1
+
+    try:
+        send_telegram(token, pro_channel, report)
+    except Exception as exc:  # network / API errors must not crash the run
+        logger.error("Daily Pro channel delivery failed: %s", exc)
+        return 1
+    logger.info("Daily update delivered to Pro channel %s", pro_channel)
     return 0
 
 

@@ -10,7 +10,7 @@ weekly commodity trade setups (Copper · Tuna · Crude Oil), delivered via
 Telegram and monetized through a paid Pro tier.
 
 ![Python 3.12](https://img.shields.io/badge/Python-3.12-3776AB?logo=python&logoColor=white)
-![Tests](https://img.shields.io/badge/tests-67%20passing-3dd68c)
+![Tests](https://img.shields.io/badge/tests-72%20passing-3dd68c)
 ![Deploy](https://img.shields.io/badge/deploy-Netlify-00C7B7?logo=netlify&logoColor=white)
 
 </div>
@@ -47,11 +47,12 @@ landing site.
 | Walk-forward, out-of-sample track record | ✅ |
 | Landing site with interactive charts & machine-readable JSON | ✅ |
 | Telegram tiered delivery (public summary vs Pro report) | ✅ |
+| Daily Pro-channel position updates | ✅ |
 | Cashfree payment flow (orders, signed webhooks, invite links) | ✅ |
 | Security hardening (rate limits, CORS, headers, signature verification) | ✅ |
-| GitHub Actions weekly automation | ✅ |
+| GitHub Actions automation (weekly + daily) | ✅ |
 | Marketing automation (SEO, changelog, newsletter, content generator) | ✅ |
-| Unit tests — **67, all passing** | ✅ |
+| Unit tests — **72, all passing** | ✅ |
 
 ### Latest track record (2026-08-03)
 
@@ -73,7 +74,7 @@ landing site.
 - **Payments:** Cashfree Payment Gateway (₹2,499/month, INR).
 - **Delivery:** Telegram Bot API (public + private Pro channel, single-use
   invite links).
-- **CI/CD:** GitHub Actions (weekly cron) → Netlify static deploy.
+- **CI/CD:** GitHub Actions (weekly + daily cron) → Netlify static deploy.
 
 ## Repository structure
 
@@ -95,7 +96,7 @@ Deepstream/
 ├── signal_site/         # deployed landing site (Netlify publish dir)
 ├── docs/                # client deliverables (research report, user guide, API ref)
 ├── internal/            # workspace (dev notes, AI prompts, marketing automation)
-├── tests/               # 67 unit tests
+├── tests/               # 72 unit tests
 ├── data/                # processed ocean + price datasets
 ├── plots/               # diagnostic plots (tracked — CI pushes them)
 ├── index.html           # operations console (admin UI)
@@ -163,6 +164,8 @@ python -m deepstream track                 # emit track_record.json
 python -m deepstream run                   # generate + track + refresh site assets
 python -m deepstream run --skip-pipeline   # fast offline run (uses existing data)
 python -m deepstream.telegram              # deliver weekly report to Telegram
+python -m deepstream daily                 # daily Pro-channel position update
+python -m deepstream daily --no-fetch      # daily update without a price refresh
 python -m deepstream.server                # serve the site + APIs on :8080
 ```
 
@@ -175,6 +178,16 @@ python -m deepstream.server                # serve the site + APIs on :8080
 
 Or let GitHub Actions do it automatically every Monday
 (`.github/workflows/weekly.yml`).
+
+### Daily Pro updates
+
+`python -m deepstream daily` fetches fresh commodity prices (with `--no-sim`,
+so a failed fetch never replaces real data with simulated series), recomputes
+the signals, and posts the current setups (entry · stop · target) to the
+**private Pro channel**. The weekly site assets and track record are
+untouched. GitHub Actions runs this every day at 06:00 UTC
+(`.github/workflows/daily.yml`); use `--no-fetch` to skip the price refresh
+for a fast offline run.
 
 ## Build process
 
@@ -210,7 +223,7 @@ Inbound-only systems, no cold outreach:
 ## Testing
 
 ```bash
-python -m unittest discover -s tests     # 67 tests
+python -m unittest discover -s tests     # 72 tests
 
 # Pre-flight / end-to-end checks
 python scripts/verify_telegram.py               # bot token + channel admin + invite permission
@@ -230,6 +243,9 @@ python scripts/run_sandbox_e2e.py all           # create → pay → webhook →
   dashboard.
 - **Weekly automation:** GitHub Actions on schedule or manual dispatch;
   refreshed assets are committed back, triggering a Netlify redeploy.
+- **Daily Pro updates:** `daily.yml` runs `python -m deepstream daily` every
+  day at 06:00 UTC — fresh prices, recomputed signals, delivered to the
+  private Pro channel. No assets are committed.
 
 ### Go-live checklist
 

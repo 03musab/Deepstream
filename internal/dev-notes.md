@@ -69,6 +69,25 @@ in the other. The unit tests pin the Python side; the sandbox E2E harness
 Optional after a refresh: `python internal/marketing/content-generator.py all`
 to produce the week's marketing copy and changelog entry.
 
+## Daily Pro delivery (`daily.yml`)
+
+`python -m deepstream daily` (cron 06:00 UTC) keeps the **private Pro
+channel** fresh between weekly publications:
+
+1. `cli.py` refreshes prices via `scripts/fetch_data.py --no-sim` — a failed
+   fetch keeps existing data instead of replacing it with simulated series.
+2. `telegram.deliver_daily()` recomputes the signals from current data and
+   sends `format_daily_report()` (full entry/stop/target levels) to the Pro
+   channel only.
+
+Design rules:
+- Daily runs **never** overwrite `latest_signal.json` / `track_record.json`
+  or push to the repo — the track record stays weekly and honest.
+- If the Pro channel or bot token is unset, `deliver_daily` logs the report
+  and returns exit code 1 so CI fails visibly.
+- If a real daily data feed (ocean indicators) is added later, wire it into
+  `fetch_data.py` — the delivery path stays the same.
+
 ## Gotchas
 
 - The GitHub Action's `git add` includes `plots/` and `data/` — keep those
