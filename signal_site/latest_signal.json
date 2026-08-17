@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-10T06:06:54.342548",
+  "generated_at": "2026-08-17T05:26:13.364010",
   "signals": [
     {
       "pair_id": 1,
@@ -14,7 +14,7 @@
       "ocean_change": null,
       "price_change_pct": null,
       "status": "NO_TRADE",
-      "generated_at": "2026-08-10T06:06:54.322087"
+      "generated_at": "2026-08-17T05:26:13.338705"
     },
     {
       "pair_id": 2,
@@ -29,7 +29,7 @@
       "ocean_change": 0.0287,
       "price_change_pct": -2.31,
       "status": "ACTIVE",
-      "generated_at": "2026-08-10T06:06:54.333091"
+      "generated_at": "2026-08-17T05:26:13.351916"
     },
     {
       "pair_id": 3,
@@ -44,7 +44,7 @@
       "ocean_change": null,
       "price_change_pct": null,
       "status": "NO_TRADE",
-      "generated_at": "2026-08-10T06:06:54.342531"
+      "generated_at": "2026-08-17T05:26:13.363989"
     }
   ],
   "summary": {
