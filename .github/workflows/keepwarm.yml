@@ -31,10 +31,7 @@ jobs:
         env:
           SITE_URL: ${{ vars.DEEPSTREAM_SITE_URL }}
         run: |
-          if [ -z "$SITE_URL" ]; then
-            echo "::error::DEEPSTREAM_SITE_URL is not set. Add it under Settings → Secrets and variables → Actions → Variables (e.g. https://deepstream.example), then re-run this workflow."
-            exit 1
-          fi
+          SITE_URL="${SITE_URL:-https://deepstreamofficial.netlify.app}"
           SITE_URL="${SITE_URL%/}" # tolerate a trailing slash
           # An invalid order_id returns an instant 400 from the function —
           # enough to load the runtime + module without touching Cashfree or
