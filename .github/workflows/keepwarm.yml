@@ -1,0 +1,46 @@
+# Keep the Netlify /api/access function warm so the first poll on
+# success.html after a payment redirect never pays a cold-start penalty.
+# The site also warms the function at checkout time (signal_site/app.js);
+# this cron makes it always-warm even between checkouts.
+#
+# One-time setup:
+#   Settings → Secrets and variables → Actions → Variables
+#   Name:  DEEPSTREAM_SITE_URL
+#   Value: https://<your-domain>   (e.g. https://deepstream.example)
+name: Keep /api/access Warm
+
+on:
+  schedule:
+    - cron: "*/5 * * * *" # every 5 minutes
+  workflow_dispatch:      # also triggerable manually from the Actions tab
+
+# Read-only: makes a single outbound GET and never touches the repo.
+permissions:
+  contents: read
+
+concurrency:
+  group: keepwarm
+  cancel-in-progress: false
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Ping /api/access
+        env:
+          SITE_URL: ${{ vars.DEEPSTREAM_SITE_URL }}
+        run: |
+          if [ -z "$SITE_URL" ]; then
+            echo "::error::DEEPSTREAM_SITE_URL is not set. Add it under Settings → Secrets and variables → Actions → Variables (e.g. https://deepstream.example), then re-run this workflow."
+            exit 1
+          fi
+          SITE_URL="${SITE_URL%/}" # tolerate a trailing slash
+          # An invalid order_id returns an instant 400 from the function —
+          # enough to load the runtime + module without touching Cashfree or
+          # Netlify Blobs. No -f: 4xx/5xx still prove the function ran (and
+          # warmed); a connection failure makes curl exit nonzero, which
+          # fails the step under bash -e.
+          curl -sS -o /dev/null --max-time 20 \
+            -w "Pinged %{url_effective} -> HTTP %{http_code}\n" \
+            "$SITE_URL/api/access?order_id=warmup_$(date +%s)"

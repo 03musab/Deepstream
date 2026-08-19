@@ -94,7 +94,8 @@ the Cashfree API), `ORDER_FAILED` / `ORDER_CANCELLED` (marks failed),
 
 ### `GET /api/access?order_id=ds_...`
 
-Polled by `success.html` after payment.
+Polled by `success.html` after payment — every 2s for the first 20s, then
+backing off to every 5s, up to ~2 minutes total.
 
 ```json
 { "status": "granted", "invite_link": "https://t.me/+...", "expires_at": "2026-09-02T..." }
@@ -102,6 +103,11 @@ Polled by `success.html` after payment.
 
 `status` is `granted | pending | revoked`. `order_id` must match
 `ds_[0-9a-f]{16}`.
+
+When the webhook has not been processed yet, the endpoint checks the order
+directly with the Cashfree API (throttled per order) and grants access as soon
+as it is `PAID` — the happy path does not wait on webhook delivery, and a
+misconfigured webhook no longer blocks customers from getting their invite.
 
 ### `GET /api/payments_config`
 

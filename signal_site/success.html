@@ -158,6 +158,13 @@
       $("status-detail").textContent = message || "We could not confirm your payment. Email billing@deepstream.example for help.";
     }
 
+    // Adaptive polling: check fast every 2s while the payment is fresh, then
+    // back off to every 5s so long waits don't hammer the endpoint.
+    const FAST_INTERVAL_MS = 2000; // first 20s
+    const SLOW_INTERVAL_MS = 5000; // after 20s
+    const FAST_WINDOW_MS = 20000;
+    const MAX_WAIT_MS = 120000;    // give up after ~2 minutes
+
     async function poll() {
       const params = new URLSearchParams(window.location.search);
       let orderId = params.get("order_id");
@@ -165,29 +172,63 @@
       if (!orderId) orderId = sessionStorage.getItem("deepstream_order_id");
       if (!orderId) return showError("No order reference was found. Please use the link from the checkout confirmation.");
 
+      const startedAt = Date.now();
       let attempts = 0;
-      const timer = setInterval(async () => {
+
+      // Returns false once the flow is done (granted / revoked / timed out).
+      const check = async () => {
         attempts += 1;
+        const elapsedSec = Math.floor((Date.now() - startedAt) / 1000);
+        // Keep the waiting message honest so it never looks frozen.
+        if (elapsedSec > 8 && attempts % 3 === 0) {
+          $("status-detail").textContent =
+            elapsedSec > 60
+              ? `Still confirming your payment (${elapsedSec}s) — this can take a couple of minutes.`
+              : "Payment confirmed — fetching your invite link…";
+        }
         try {
           const res = await fetch(`/api/access?order_id=${encodeURIComponent(orderId)}`, { cache: "no-store" });
-          const data = await res.json();
-          if (data.status === "granted") {
-            clearInterval(timer);
-            showGranted(data.invite_link, data.expires_at);
-          } else if (data.status === "revoked") {
-            clearInterval(timer);
-            showRevoked(data.message);
-          } else if (attempts >= 30) {
-            clearInterval(timer);
-            showError("Payment confirmed but the invite link is still generating. Please wait a moment and refresh, or email billing@deepstream.example.");
+          if (res.status !== 429) { // 429 = rate-limited: no status to read
+            const data = await res.json();
+            if (data.status === "granted") {
+              showGranted(data.invite_link, data.expires_at);
+              return false;
+            }
+            if (data.status === "revoked") {
+              showRevoked(data.message);
+              return false;
+            }
+            // Payment is still processing — keep waiting, but cap the total.
+            const timedOut = Date.now() - startedAt >= MAX_WAIT_MS;
+            if (timedOut) {
+              showError("Payment confirmed but the invite link is still generating. Please wait a moment and refresh, or email billing@deepstream.example.");
+            }
+            return !timedOut;
           }
         } catch (e) {
-          if (attempts >= 30) {
-            clearInterval(timer);
-            showError();
-          }
+          // Transient network/API error — no status either.
         }
-      }, 2000);
+        // No usable answer (network error or rate limit): on timeout, use the
+        // generic message — we can't claim the payment went through without a
+        // response.
+        if (Date.now() - startedAt >= MAX_WAIT_MS) {
+          showError();
+          return false;
+        }
+        return true;
+      };
+
+      const scheduleNext = () => {
+        const delay = Date.now() - startedAt < FAST_WINDOW_MS ? FAST_INTERVAL_MS : SLOW_INTERVAL_MS;
+        setTimeout(async () => {
+          if (await check()) scheduleNext();
+        }, delay);
+      };
+
+      // Check immediately (the access function was usually warmed up during
+      // checkout), then poll adaptively. Each check is awaited before the next
+      // is scheduled, so slow responses never overlap.
+      if (await check()) scheduleNext();
     }
 
     poll();

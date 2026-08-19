@@ -437,6 +437,17 @@ async function startCheckout() {
     // drops the query parameter.
     sessionStorage.setItem("deepstream_order_id", order.order_id);
 
+    // Warm up the /api/access function so the first poll on success.html
+    // (right after the payment redirect) reuses a warm instance instead of
+    // paying a cold-start penalty. Best-effort: if the customer stays on the
+    // payment page for many minutes the instance may cool — success.html's
+    // immediate first poll is the real guarantee. Fire-and-forget and never
+    // awaited so it cannot slow down the checkout. The order is fresh
+    // (ACTIVE), so the response is a cheap "pending" that still loads the
+    // runtime + blob store.
+    fetch(`/api/access?order_id=${encodeURIComponent(order.order_id)}`, { cache: "no-store" })
+      .catch(() => {});
+
     const Cashfree = await loadCashfreeSdk();
     const cashfree = Cashfree({ mode: cashfreeMode });
     const result = await cashfree.checkout({

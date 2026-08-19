@@ -10,7 +10,7 @@ weekly commodity trade setups (Copper · Tuna · Crude Oil), delivered via
 Telegram and monetized through a paid Pro tier.
 
 ![Python 3.12](https://img.shields.io/badge/Python-3.12-3776AB?logo=python&logoColor=white)
-![Tests](https://img.shields.io/badge/tests-72%20passing-3dd68c)
+![Tests](https://img.shields.io/badge/tests-75%20passing-3dd68c)
 ![Deploy](https://img.shields.io/badge/deploy-Netlify-00C7B7?logo=netlify&logoColor=white)
 
 </div>
@@ -52,7 +52,7 @@ landing site.
 | Security hardening (rate limits, CORS, headers, signature verification) | ✅ |
 | GitHub Actions automation (weekly + daily) | ✅ |
 | Marketing automation (SEO, changelog, newsletter, content generator) | ✅ |
-| Unit tests — **72, all passing** | ✅ |
+| Unit tests — **75, all passing** | ✅ |
 
 ### Latest track record (2026-08-03)
 
@@ -223,7 +223,8 @@ Inbound-only systems, no cold outreach:
 ## Testing
 
 ```bash
-python -m unittest discover -s tests     # 72 tests
+python -m unittest discover -s tests     # 75 tests
+npm test                                  # Netlify function tests (node:test, zero deps)
 
 # Pre-flight / end-to-end checks
 python scripts/verify_telegram.py               # bot token + channel admin + invite permission
@@ -241,6 +242,11 @@ python scripts/run_sandbox_e2e.py all           # create → pay → webhook →
   `https://<your-domain>/webhooks/cashfree` for `ORDER_PAID`,
   `ORDER_FAILED`, `ORDER_CANCELLED`, `REFUND_STATUS` in the Cashfree
   dashboard.
+- **Optional: keep payment functions warm** — set the GitHub repository
+  variable `DEEPSTREAM_SITE_URL` and the `keepwarm.yml` workflow pings
+  `/api/access` every 5 minutes so the success page never pays a cold start
+  (the checkout flow already warms it via `signal_site/app.js`; this cron
+  just makes it always-warm between checkouts).
 - **Weekly automation:** GitHub Actions on schedule or manual dispatch;
   refreshed assets are committed back, triggering a Netlify redeploy.
 - **Daily Pro updates:** `daily.yml` runs `python -m deepstream daily` every
@@ -280,7 +286,7 @@ python scripts/run_sandbox_e2e.py all           # create → pay → webhook →
 | `create-order` returns `502` with a provider detail | Read the `detail`/`code` field — it is Cashfree's real reason (e.g. sandbox account rejecting the order). |
 | Charts empty on the operations console | Rebuild `data-store.js`: `python scripts/convert_csv_to_js.py`. |
 | Track record shows `0 trades` | `data/*.csv` missing — run `python scripts/fetch_data.py` first. |
-| `Order not yet seen` on the success page | The webhook hasn't processed yet (polls every 2s, up to 60s), or the webhook URL/secret is misconfigured. |
+| `Order not yet seen` on the success page | The payment is still settling at Cashfree. The page polls every 2s for the first 20s, then every 5s (up to ~2 min) and the access endpoint also checks Cashfree directly — a delayed webhook no longer blocks access. If it persists, check the webhook URL/secret. |
 
 ## Contributing
 

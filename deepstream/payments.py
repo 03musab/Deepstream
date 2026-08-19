@@ -263,6 +263,26 @@ def revoke_channel_invite(bot_token: str, chat_id: str, invite_link: str) -> Non
 
 
 # ---------------------------------------------------------------------------
+# Provider-order check cache (shared by all SubscriptionStore instances)
+# ---------------------------------------------------------------------------
+
+# TTL for the provider-order check cache used by access_for_order. success.html
+# polls every 2s; caching keeps each poll from hammering the Cashfree API.
+# Only a timestamp is stored: grants/revocations are persisted to state, so a
+# cache hit always means "still pending, don't re-query the provider yet".
+_ACCESS_CHECK_TTL_SECONDS = 5.0
+_access_checks: dict[str, float] = {}
+
+
+def _cache_access_check(order_id: str) -> None:
+    _access_checks[order_id] = time.monotonic()
+    if len(_access_checks) > 1000:  # opportunistic prune
+        now = time.monotonic()
+        for key in [k for k, at in _access_checks.items() if now - at > 60]:
+            _access_checks.pop(key, None)
+
+
+# ---------------------------------------------------------------------------
 # Subscription store (lean cache of access decisions, keyed by order_id)
 # ---------------------------------------------------------------------------
 
@@ -320,20 +340,87 @@ class SubscriptionStore:
         self.save(data)
 
     def access_for_order(self, order_id: str) -> dict[str, Any]:
-        """Return the access state a success page should display."""
+        """Return the access state a success page should display.
+
+        Terminal answers from local state (webhook already processed) win.
+        Otherwise — the webhook may not have arrived yet — we ask Cashfree
+        directly (throttled by a short cache) and grant on the spot once the
+        order is verified PAID. This resolves the happy path in seconds and
+        self-heals when webhook delivery/signature is misconfigured.
+        """
         data = self.load()
         order = data["orders"].get(order_id)
-        if not order:
-            return {"status": "pending", "message": "Order not yet seen."}
 
-        if order.get("status") in GRANT_STATUSES and order.get("invite_link"):
-            return {
-                "status": "granted",
-                "invite_link": order["invite_link"],
-                "expires_at": order.get("invite_expires_at"),
-            }
-        if order.get("status") in REVOKE_STATUSES:
+        if order:
+            if order.get("status") in GRANT_STATUSES and order.get("invite_link"):
+                return {
+                    "status": "granted",
+                    "invite_link": order["invite_link"],
+                    "expires_at": order.get("invite_expires_at"),
+                }
+            if order.get("status") in REVOKE_STATUSES:
+                return {"status": "revoked", "message": "Payment failed or was refunded."}
+
+        cached_at = _access_checks.get(order_id)
+        if cached_at and time.monotonic() - cached_at < _ACCESS_CHECK_TTL_SECONDS:
+            return {"status": "pending", "message": "Processing payment…"}
+
+        try:
+            fetched = fetch_order(order_id)
+        except Exception:
+            # Not visible to the provider yet or a transient API error — the
+            # poll loop will retry shortly.
+            logger.debug("Provider check for %s not available yet; will retry", order_id)
+            _cache_access_check(order_id)
+            return {"status": "pending", "message": "Processing payment…"}
+
+        status = str(fetched.get("order_status") or "")
+        if status == "PAID":
+            expected_amount = float(os.environ.get(config.CASHFREE_ORDER_AMOUNT_ENV, "2499"))
+            expected_currency = os.environ.get(config.CASHFREE_ORDER_CURRENCY_ENV, "INR")
+            if float(fetched.get("order_amount") or 0) == expected_amount and \
+                    fetched.get("order_currency") == expected_currency:
+                # Re-read so a concurrently-processing webhook is not overridden.
+                data = self.load()
+                existing = data["orders"].get(order_id)
+                if existing and existing.get("status") in GRANT_STATUSES and \
+                        existing.get("invite_link"):
+                    return {
+                        "status": "granted",
+                        "invite_link": existing["invite_link"],
+                        "expires_at": existing.get("invite_expires_at"),
+                    }
+                invite = self._grant(
+                    order_id,
+                    cf_order_id=str(
+                        fetched.get("cf_order_id") or (order or {}).get("cf_order_id") or ""
+                    ),
+                    customer_email=(fetched.get("customer_details") or {}).get("customer_email")
+                    or (order or {}).get("customer_email"),
+                    amount=fetched.get("order_amount"),
+                    currency=fetched.get("order_currency"),
+                )
+                if invite:
+                    _cache_access_check(order_id)
+                    updated = self.load()["orders"].get(order_id) or {}
+                    return {
+                        "status": "granted",
+                        "invite_link": invite,
+                        "expires_at": updated.get("invite_expires_at"),
+                    }
+                # Invite minting unavailable (Telegram unconfigured) — fall
+                # through to pending so the poll loop keeps trying.
+        elif status in ("FAILED", "CANCELLED", "EXPIRED"):
+            current = self.load()["orders"].get(order_id)
+            if not current or current.get("status") not in GRANT_STATUSES:
+                self._mark_failed(
+                    order_id,
+                    customer_email=(fetched.get("customer_details") or {}).get("customer_email"),
+                )
+            _cache_access_check(order_id)
             return {"status": "revoked", "message": "Payment failed or was refunded."}
+
+        _cache_access_check(order_id)
         return {"status": "pending", "message": "Processing payment…"}
 
     def _record_order(self, order_id: str, *, customer_email: Optional[str],

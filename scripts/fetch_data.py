@@ -10,7 +10,7 @@ NOAA_SST_URL = "https://www.cpc.ncep.noaa.gov/data/indices/ersst5.nino.mth.91-20
 COPPER_TICKER = "HG=F"
 OIL_TICKER = "CL=F"
 START_DATE = datetime(2006, 1, 1)
-END_DATE = datetime(2026, 6, 1)
+END_DATE = datetime.utcnow()
 
 DATA_DIR = "data"
 os.makedirs(DATA_DIR, exist_ok=True)

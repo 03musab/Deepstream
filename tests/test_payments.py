@@ -11,6 +11,7 @@ from pathlib import Path
 from unittest import mock
 
 from deepstream import config
+from deepstream import payments as payments_module
 from deepstream.payments import (
     SubscriptionStore,
     create_cashfree_order,
@@ -60,6 +61,8 @@ class TestSubscriptionStore(unittest.TestCase):
         self._orig_file = config.SUBSCRIPTIONS_FILE
         config.SUBSCRIPTIONS_FILE = self.store_path
         self.store = SubscriptionStore(self.store_path)
+        # The provider-check cache is module-global; isolate tests from each other.
+        payments_module._access_checks.clear()
         self._env = os.environ.copy()
         os.environ[config.TELEGRAM_TOKEN_ENV] = "test-bot-token"
         os.environ[config.PRO_CHANNEL_ENV] = "-1001234567890"
@@ -238,8 +241,56 @@ class TestSubscriptionStore(unittest.TestCase):
         self.assertIn("processed", result)
         self.assertIsNone(self.store.load()["orders"]["ds_abc123"]["invite_link"])
 
-    def test_access_pending_before_webhook(self):
+    @mock.patch("deepstream.payments.fetch_order",
+                side_effect=RuntimeError("provider not reachable yet"))
+    def test_access_pending_before_webhook(self, mock_fetch):
         access = self.store.access_for_order("ds_unknown")
+        self.assertEqual(access["status"], "pending")
+        mock_fetch.assert_called_once_with("ds_unknown")
+
+    @mock.patch("deepstream.payments.create_channel_invite", return_value="https://t.me/+abc123")
+    @mock.patch("deepstream.payments.fetch_order")
+    def test_access_grants_directly_when_webhook_lagging(self, mock_fetch, mock_invite):
+        """The access endpoint self-heals: a PAID order at the provider is
+        granted immediately, without waiting on webhook delivery."""
+        mock_fetch.return_value = {
+            "order_id": "ds_abc123",
+            "cf_order_id": "1234567890",
+            "order_status": "PAID",
+            "order_amount": 2499.0,
+            "order_currency": "INR",
+            "customer_details": {"customer_email": "pro@example.com"},
+        }
+        access = self.store.access_for_order("ds_abc123")
+        self.assertEqual(access["status"], "granted")
+        self.assertEqual(access["invite_link"], "https://t.me/+abc123")
+        mock_invite.assert_called_once()
+
+        # A second poll must reuse the stored grant, not mint another link.
+        access = self.store.access_for_order("ds_abc123")
+        self.assertEqual(access["status"], "granted")
+        mock_invite.assert_called_once()
+
+    @mock.patch("deepstream.payments.fetch_order")
+    def test_access_revokes_when_provider_says_failed(self, mock_fetch):
+        mock_fetch.return_value = {
+            "order_id": "ds_abc123",
+            "order_status": "FAILED",
+            "order_amount": 2499.0,
+            "order_currency": "INR",
+        }
+        access = self.store.access_for_order("ds_abc123")
+        self.assertEqual(access["status"], "revoked")
+
+    @mock.patch("deepstream.payments.fetch_order")
+    def test_access_does_not_grant_on_amount_mismatch(self, mock_fetch):
+        mock_fetch.return_value = {
+            "order_id": "ds_abc123",
+            "order_status": "PAID",
+            "order_amount": 1.0,  # tampered amount
+            "order_currency": "INR",
+        }
+        access = self.store.access_for_order("ds_abc123")
         self.assertEqual(access["status"], "pending")
 
     def test_no_telegram_credentials_logs_warning(self):

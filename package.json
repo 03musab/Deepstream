@@ -4,6 +4,9 @@
   "private": true,
   "description": "Netlify Functions backend for Deepstream Cashfree payments (order creation, webhooks, access lookup).",
   "type": "module",
+  "scripts": {
+    "test": "node --experimental-loader ./tests/netlify/blobs-loader.mjs --test tests/netlify/*.test.mjs"
+  },
   "dependencies": {
     "@netlify/blobs": "^8.0.0"
   }

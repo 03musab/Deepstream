@@ -227,20 +227,110 @@ async function saveState(state) {
    Access lookup
 --------------------------------------------------------------------------- */
 
+// TTL for the provider-order check cache used by accessForOrder. success.html
+// polls every 2s; caching keeps each poll from hammering the Cashfree API.
+// Only a timestamp is stored: grants/revocations are persisted to state, so a
+// cache hit always means "still pending, don't re-query the provider yet".
+const ACCESS_CHECK_TTL_MS = 5000;
+const accessChecks = new Map(); // orderId -> last provider check time (ms)
+
+function cacheAccessCheck(orderId) {
+  accessChecks.set(orderId, Date.now());
+  // Opportunistic prune so the map cannot grow without bound.
+  if (accessChecks.size > 1000) {
+    const now = Date.now();
+    for (const [key, at] of accessChecks) {
+      if (now - at > 60_000) accessChecks.delete(key);
+    }
+  }
+}
+
 export async function accessForOrder(orderId) {
   const state = await loadState();
   const order = state.orders[orderId];
-  if (!order) return { status: "pending", message: "Order not yet seen." };
-  if (GRANT_STATUSES.has(order.status) && order.invite_link) {
+
+  // Terminal answers from local state (webhook already processed) win.
+  if (order && GRANT_STATUSES.has(order.status) && order.invite_link) {
     return {
       status: "granted",
       invite_link: order.invite_link,
       expires_at: order.invite_expires_at,
     };
   }
-  if (REVOKE_STATUSES.has(order.status)) {
+  if (order && REVOKE_STATUSES.has(order.status)) {
     return { status: "revoked", message: "Payment failed or was refunded." };
   }
+
+  // The webhook may not have arrived yet — don't make the customer sit on
+  // "Checking payment status…". Ask Cashfree directly (throttled) and grant
+  // on the spot once the order is verified PAID. This also self-heals when
+  // webhook delivery/signature is misconfigured.
+  const lastCheck = accessChecks.get(orderId);
+  if (lastCheck && Date.now() - lastCheck < ACCESS_CHECK_TTL_MS) {
+    return { status: "pending", message: "Processing payment…" };
+  }
+
+  try {
+    const fetched = await fetchOrder(orderId);
+    const status = fetched.order_status || "";
+
+    if (status === "PAID") {
+      const expectedAmount = Number(env("CASHFREE_ORDER_AMOUNT", "2499"));
+      const expectedCurrency = env("CASHFREE_ORDER_CURRENCY", "INR");
+      if (
+        Number(fetched.order_amount) === expectedAmount &&
+        fetched.order_currency === expectedCurrency
+      ) {
+        // Re-read state so a concurrently-processing webhook is not overridden.
+        const fresh = await loadState();
+        const existing = fresh.orders[orderId];
+        if (existing && GRANT_STATUSES.has(existing.status) && existing.invite_link) {
+          return {
+            status: "granted",
+            invite_link: existing.invite_link,
+            expires_at: existing.invite_expires_at,
+          };
+        }
+        // Re-reading state before granting narrows (but cannot fully close)
+        // the window where a concurrently-processing webhook mints a second
+        // single-use link; the duplicate expires unused, so this is accepted.
+        const inviteLink = await grant(fresh, orderId, {
+          cfOrderId: String(fetched.cf_order_id || (order && order.cf_order_id) || ""),
+          customerEmail:
+            (fetched.customer_details || {}).customer_email ||
+            (order && order.customer_email),
+          amount: fetched.order_amount,
+          currency: fetched.order_currency,
+          occurredAt: "",
+        });
+        const updated = fresh.orders[orderId] || {};
+        if (inviteLink) {
+          cacheAccessCheck(orderId);
+          return {
+            status: "granted",
+            invite_link: inviteLink,
+            expires_at: updated.invite_expires_at,
+          };
+        }
+        // Invite minting unavailable (Telegram unconfigured) — fall through
+        // to pending so the poll loop keeps trying.
+      }
+    } else if (["FAILED", "CANCELLED", "EXPIRED"].includes(status)) {
+      const fresh = await loadState();
+      const current = fresh.orders[orderId];
+      if (!current || !GRANT_STATUSES.has(current.status)) {
+        await markFailed(fresh, orderId, (fetched.customer_details || {}).customer_email, "");
+      }
+      cacheAccessCheck(orderId);
+      return { status: "revoked", message: "Payment failed or was refunded." };
+    }
+  } catch (err) {
+    // Order not visible to the provider yet or a transient API error — the
+    // poll loop will retry shortly.
+    console.warn(`accessForOrder: provider check failed for ${orderId}`, err && err.message);
+  }
+
+  cacheAccessCheck(orderId);
   return { status: "pending", message: "Processing payment…" };
 }
 
