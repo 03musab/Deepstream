@@ -152,8 +152,7 @@ def generate_track_record(params: dict) -> dict[str, Any]:
 
         start = df.index[-1] - pd.Timedelta(days=config.TRACK_LOOKBACK_DAYS)
         window = df.loc[df.index >= start]
-        # Exclude the most recent horizon so outcomes are fully realised.
-        usable = window.iloc[: -config.TRACK_HOLDING_DAYS] if len(window) > config.TRACK_HOLDING_DAYS else window
+        usable = window
 
         dates = usable.index[:: config.TRACK_STEP_DAYS]
         for date_idx, dt in enumerate(dates):
