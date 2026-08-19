@@ -169,18 +169,18 @@ def generate_track_record(params: dict) -> dict[str, Any]:
             )
             records.append(
                 TrackRecordEntry(
-                    pair_id=pair_id,
-                    pair=pair_cfg["pair"],
+                    pair_id=int(pair_id),
+                    pair=str(pair_cfg["pair"]),
                     signal_date=pd.Timestamp(dt).strftime("%Y-%m-%d"),
-                    direction=sig.direction,
-                    confidence=sig.confidence,
-                    pearson_r=sig.pearson_r,
-                    entry=sig.entry,
-                    stop_loss=sig.stop_loss,
-                    take_profit=sig.take_profit,
-                    outcome=outcome,
-                    return_pct=ret,
-                    days_to_close=days,
+                    direction=str(sig.direction),
+                    confidence=str(sig.confidence),
+                    pearson_r=float(sig.pearson_r),
+                    entry=float(sig.entry),
+                    stop_loss=float(sig.stop_loss),
+                    take_profit=float(sig.take_profit),
+                    outcome=str(outcome),
+                    return_pct=float(ret),
+                    days_to_close=int(days),
                 )
             )
 

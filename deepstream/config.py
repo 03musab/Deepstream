@@ -78,13 +78,13 @@ CONFIDENCE_THRESHOLDS = {
 }
 
 # Only signals at or above this confidence are emitted as tradeable.
-MIN_TRADE_CONFIDENCE = "MEDIUM"
+MIN_TRADE_CONFIDENCE = "LOW"
 
 # ---------------------------------------------------------------------------
 # Risk parameters for trade setup generation
 # ---------------------------------------------------------------------------
-STOP_LOSS_PCT = 0.05    # 5% stop from entry
-TAKE_PROFIT_PCT = 0.08  # 8% take profit from entry
+STOP_LOSS_PCT = 0.065   # 6.5% stop from entry (wider buffer for commodity noise)
+TAKE_PROFIT_PCT = 0.130  # 13.0% take profit (1:2 Risk-to-Reward ratio)
 CHANGE_WINDOW_MAX = 30  # days used to measure the ocean signal move
 PRICE_WINDOW_MAX = 30   # days used to measure the recent price move
 

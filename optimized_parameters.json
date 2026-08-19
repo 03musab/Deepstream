@@ -1,20 +1,20 @@
 {
     "test_1": {
         "ocean_window": 120,
-        "price_window": 120,
-        "optimal_lag": 56,
-        "max_correlation": -0.3793515243460536
+        "price_window": 1,
+        "optimal_lag": 110,
+        "max_correlation": -0.17186507443208002
     },
     "test_2": {
         "ocean_window": 120,
         "price_window": 120,
         "optimal_lag": 30,
-        "max_correlation": -0.9986559509527964
+        "max_correlation": -0.9988538059040413
     },
     "test_3": {
         "ocean_window": 120,
-        "price_window": 30,
-        "optimal_lag": 100,
-        "max_correlation": 0.15188073512337888
+        "price_window": 120,
+        "optimal_lag": 30,
+        "max_correlation": -0.4221815974535495
     }
 }

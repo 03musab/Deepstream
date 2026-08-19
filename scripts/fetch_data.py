@@ -9,7 +9,7 @@ from datetime import datetime, timedelta
 NOAA_SST_URL = "https://www.cpc.ncep.noaa.gov/data/indices/ersst5.nino.mth.91-20.ascii"
 COPPER_TICKER = "HG=F"
 OIL_TICKER = "CL=F"
-START_DATE = datetime(2006, 1, 1)
+START_DATE = datetime(2000, 1, 1)
 END_DATE = datetime.utcnow()
 
 DATA_DIR = "data"
@@ -44,7 +44,7 @@ def fetch_noaa_sst():
                     # check if the first part is a year
                     yr = int(parts[0])
                     mon = int(parts[1])
-                    if yr >= 2006:
+                    if yr >= 2000:
                         # NINO3.4 is usually parts[8], ANOM is parts[9]
                         nino34_anom = float(parts[9])
                         date_str = f"{yr}-{mon:02d}-01"

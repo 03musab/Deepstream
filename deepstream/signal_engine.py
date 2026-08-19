@@ -136,7 +136,8 @@ def compute_signal_for_pair(
 
     confidence = _grade_confidence(abs(r))
     min_grade = config.MIN_TRADE_CONFIDENCE
-    is_tradeable = confidence in ("HIGH", "MEDIUM")
+    valid_grades = ("HIGH", "MEDIUM", "LOW") if min_grade == "LOW" else ("HIGH", "MEDIUM")
+    is_tradeable = confidence in valid_grades
     if confidence == "NOISE" or not is_tradeable:
         return Signal(
             pair_id=pair_id,

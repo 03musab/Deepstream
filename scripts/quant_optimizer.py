@@ -34,8 +34,12 @@ def evaluate_combination(args):
     
     df = df_raw.copy()
     
-    # Apply rolling smoothing
-    if o_win > 1:
+    # Apply rolling / feature smoothing
+    if ocean_col == "Chemical_Plume":
+        df['ocean_smooth'] = df[ocean_col].ewm(span=max(o_win, 3)).mean()
+    elif ocean_col == "SST_Anomaly":
+        df['ocean_smooth'] = df[ocean_col].diff(periods=max(o_win, 1)).rolling(window=30, min_periods=1).mean()
+    elif o_win > 1:
         df['ocean_smooth'] = df[ocean_col].rolling(window=o_win).mean()
     else:
         df['ocean_smooth'] = df[ocean_col]
