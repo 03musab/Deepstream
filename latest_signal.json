@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-31T11:14:05.973942",
+  "generated_at": "2026-09-07T09:50:09.842624",
   "signals": [
     {
       "pair_id": 1,
@@ -14,29 +14,29 @@
       "ocean_change": 1.15,
       "price_change_pct": 6.89,
       "status": "ACTIVE",
-      "generated_at": "2026-08-31T11:14:05.940227"
+      "generated_at": "2026-09-07T09:50:09.811132"
     },
     {
       "pair_id": 2,
       "pair": "Atlantic Chlorophyll \u2192 Tuna Price",
       "direction": "SHORT",
       "confidence": "HIGH",
-      "pearson_r": -0.7753,
+      "pearson_r": -0.7743,
       "lag_days": 30,
-      "entry": 11.0,
-      "stop_loss": 11.71,
-      "take_profit": 9.57,
-      "ocean_change": 0.1225,
-      "price_change_pct": -10.82,
+      "entry": 10.96,
+      "stop_loss": 11.67,
+      "take_profit": 9.54,
+      "ocean_change": 0.0221,
+      "price_change_pct": -7.69,
       "status": "ACTIVE",
-      "generated_at": "2026-08-31T11:14:05.958182"
+      "generated_at": "2026-09-07T09:50:09.828329"
     },
     {
       "pair_id": 3,
       "pair": "Gulf of Mexico Chemical Plume \u2192 Crude Oil Futures",
       "direction": "NONE",
       "confidence": "NOISE",
-      "pearson_r": -0.0851,
+      "pearson_r": -0.085,
       "lag_days": 35,
       "entry": null,
       "stop_loss": null,
@@ -44,7 +44,7 @@
       "ocean_change": null,
       "price_change_pct": null,
       "status": "NO_TRADE",
-      "generated_at": "2026-08-31T11:14:05.973857"
+      "generated_at": "2026-09-07T09:50:09.842546"
     }
   ],
   "summary": {
