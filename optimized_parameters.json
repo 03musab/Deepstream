@@ -9,12 +9,12 @@
         "ocean_window": 120,
         "price_window": 120,
         "optimal_lag": 30,
-        "max_correlation": -0.9988350410656249
+        "max_correlation": -0.9988290674747619
     },
     "test_3": {
         "ocean_window": 120,
         "price_window": 120,
         "optimal_lag": 35,
-        "max_correlation": -0.4210276904730353
+        "max_correlation": -0.4200326543041117
     }
 }
